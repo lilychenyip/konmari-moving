@@ -8,9 +8,14 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
 </head>
 <body>
     <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+        const { Camera, Search, Edit2, Trash2, Download, Upload, Share2, Copy, Check, Printer, FileSpreadsheet, Settings, Users, Plus, Package, Home, User, Heart } = lucide;
+    </script>
     <script type="text/babel" src="app.js"></script>
 </body>
 </html>
