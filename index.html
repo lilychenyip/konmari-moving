@@ -168,30 +168,9 @@
                 ])
               ];
               
-              // First, try to clear existing data
-              const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:clear?key=${settings.apiKey}`;
-              console.log('Clearing sheet...');
-              
-              const clearResponse = await fetch(clearUrl, {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json'
-                },
-                body: JSON.stringify({})
-              });
-              
-              if (!clearResponse.ok) {
-                const clearError = await clearResponse.text();
-                console.error('Clear failed:', clearError);
-                throw new Error(`Clear failed: ${clearResponse.status} - ${clearError}`);
-              }
-              
-              console.log('Sheet cleared successfully');
-              
-              // Then add new data
+              // Use PUT method to overwrite all data (this works with API keys)
               const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1?valueInputOption=USER_ENTERED&key=${settings.apiKey}`;
-              console.log('Adding data to sheet...');
+              console.log('Updating sheet with PUT method...');
               
               const updateResponse = await fetch(updateUrl, {
                 method: 'PUT',
@@ -220,11 +199,11 @@
               
               // Show specific error messages
               if (error.message.includes('403')) {
-                alert('❌ Google Sheets Error: API key doesn\'t have permission. Please check:\n1. API key is correct\n2. Google Sheets API is enabled\n3. Sheet is shared publicly');
+                alert('❌ Google Sheets Error: Permission denied. Please:\n1. Make sure your sheet is shared as "Anyone with link can EDIT"\n2. Check if your API key has proper permissions');
               } else if (error.message.includes('404')) {
-                alert('❌ Google Sheets Error: Spreadsheet not found. Please check:\n1. Spreadsheet ID is correct\n2. Sheet is shared with "Anyone with link can edit"');
+                alert('❌ Google Sheets Error: Spreadsheet not found. Please check:\n1. Spreadsheet ID is correct\n2. Sheet is shared publicly');
               } else if (error.message.includes('400')) {
-                alert('❌ Google Sheets Error: Invalid request. The sheet might be protected or API key is invalid.');
+                alert('❌ Google Sheets Error: Bad request. This might be an API key issue.');
               } else {
                 alert(`❌ Google Sheets Error: ${error.message}\n\nPlease check your internet connection and try again.`);
               }
