@@ -1,51 +1,11 @@
-// Auto-export functionality
-          const autoExportData = () => {
-            try {
-              const exportData = {
-                boxes,
-                settings,
-                exportDate: new Date().toISOString(),
-                totalBoxes: boxes.length
-              };
-              
-              const dataStr = JSON.stringify(exportData, null, 2);
-              const dataBlob = new Blob([dataStr], { type: 'application/json' });
-              const url = URL.createObjectURL(dataBlob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `konmari-auto-backup-${new Date().toISOString().split('T')[0]}.json`;
-              
-              console.log('Auto-backup prepared');
-            } catch (error) {
-              console.error('Auto-export failed:', error);
-            }
-          };          const syncToCloud = () => {
-            const syncData = {
-              boxes,
-              timestamp: Date.now().toString(),
-              lastUpdatedBy: settings.userName
-            };
-            
-            // Save to collaboration storage
-            if (shareCode) {
-              localStorage.setItem(`sync_${shareCode}`, JSON.stringify(syncData));
-            }
-            
-            // Always save to local storage with enhanced persistence
-            saveToMultipleLocations({ boxes, settings });
-            
-            // Auto-sync to Google Sheets if enabled
-            if (settings.autoGoogleSync && settings.googleSheetsConnected) {
-              syncToGoogleSheets(boxes);
-            }
-          };<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KonMari Moving Assistant</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
@@ -57,24 +17,24 @@
         const { useState, useRef, useEffect } = React;
         
         // Simple icon components
-        const Camera = () => <span>📷</span>;
-        const Search = () => <span>🔍</span>;
-        const Edit2 = () => <span>✏️</span>;
-        const Trash2 = () => <span>🗑️</span>;
-        const Download = () => <span>⬇️</span>;
-        const Upload = () => <span>⬆️</span>;
-        const Share2 = () => <span>📤</span>;
-        const Copy = () => <span>📋</span>;
-        const Check = () => <span>✅</span>;
-        const Printer = () => <span>🖨️</span>;
-        const FileSpreadsheet = () => <span>📊</span>;
-        const Settings = () => <span>⚙️</span>;
-        const Users = () => <span>👥</span>;
-        const Plus = () => <span>➕</span>;
-        const Package = () => <span>📦</span>;
-        const Heart = () => <span>💝</span>;
+        const Camera = () => React.createElement('span', null, '📷');
+        const Search = () => React.createElement('span', null, '🔍');
+        const Edit2 = () => React.createElement('span', null, '✏️');
+        const Trash2 = () => React.createElement('span', null, '🗑️');
+        const Download = () => React.createElement('span', null, '⬇️');
+        const Upload = () => React.createElement('span', null, '⬆️');
+        const Share2 = () => React.createElement('span', null, '📤');
+        const Copy = () => React.createElement('span', null, '📋');
+        const Check = () => React.createElement('span', null, '✅');
+        const Printer = () => React.createElement('span', null, '🖨️');
+        const FileSpreadsheet = () => React.createElement('span', null, '📊');
+        const Settings = () => React.createElement('span', null, '⚙️');
+        const Users = () => React.createElement('span', null, '👥');
+        const Plus = () => React.createElement('span', null, '➕');
+        const Package = () => React.createElement('span', null, '📦');
+        const Heart = () => React.createElement('span', null, '💝');
 
-        const KonMariMovingAssistant = () => {
+        function KonMariMovingAssistant() {
           const [boxes, setBoxes] = useState([]);
           const [currentBox, setCurrentBox] = useState({
             id: '',
@@ -93,26 +53,24 @@
           const [copied, setCopied] = useState(false);
           const [isConnected, setIsConnected] = useState(false);
           const [collaborators, setCollaborators] = useState([]);
-          const [saveStatus, setSaveStatus] = useState('saved'); // 'saving', 'saved', 'error'
-          // Password protection states
+          const [saveStatus, setSaveStatus] = useState('saved');
           const [isAuthenticated, setIsAuthenticated] = useState(false);
           const [passwordInput, setPasswordInput] = useState('');
           const [showPassword, setShowPassword] = useState(false);
           const [settings, setSettings] = useState({
             printerConnected: false,
             printerType: 'dymo',
-            googleSheetsConnected: true, // Pre-enabled
-            spreadsheetId: '1YcU5Zfp8ndcpqxTOFi3yXfrUXYgnl-g3s9TO9bZV7qA', // Your sheet ID
-            apiKey: 'AIzaSyBBU4986lv6Vil-ivXKsU5z0NbnqiGcoOw', // Your API key
+            googleSheetsConnected: true,
+            spreadsheetId: '1YcU5Zfp8ndcpqxTOFi3yXfrUXYgnl-g3s9TO9bZV7qA',
+            apiKey: 'AIzaSyBBU4986lv6Vil-ivXKsU5z0NbnqiGcoOw',
             smartNumbering: true,
             autoSync: true,
             userName: 'LC',
-            autoGoogleSync: true // New: Auto-sync to Google Sheets
+            autoGoogleSync: true
           });
           const cameraInputRef = useRef(null);
           const syncIntervalRef = useRef(null);
 
-          // App password
           const APP_PASSWORD = '170EEA';
 
           const locations = [
@@ -122,18 +80,137 @@
             { value: 'jy', label: 'JY', icon: '👨', color: 'bg-orange-50 border-orange-200 text-orange-700', prefix: 'JY' }
           ];
 
-          // Smart Box Numbering System
           const generateSmartBoxId = () => {
             const locationInfo = locations.find(loc => loc.value === currentBox.location);
             const prefix = locationInfo?.prefix || 'BX';
-            
             const locationBoxes = boxes.filter(box => box.location === currentBox.location);
             const number = locationBoxes.length + 1;
-            
             return `${prefix}-${number.toString().padStart(3, '0')}`;
           };
 
-          // Real-time sync simulation
+          const saveToMultipleLocations = (data) => {
+            setSaveStatus('saving');
+            try {
+              localStorage.setItem('konmari_boxes', JSON.stringify(data.boxes || []));
+              localStorage.setItem('konmari_settings', JSON.stringify(data.settings || settings));
+              sessionStorage.setItem('konmari_backup', JSON.stringify(data));
+              
+              const timestampedData = {
+                ...data,
+                lastSaved: new Date().toISOString(),
+                version: '1.0'
+              };
+              localStorage.setItem('konmari_full_backup', JSON.stringify(timestampedData));
+              
+              setSaveStatus('saved');
+              return true;
+            } catch (error) {
+              console.error('Save failed:', error);
+              setSaveStatus('error');
+              return false;
+            }
+          };
+
+          const loadSavedData = () => {
+            try {
+              const savedBoxes = localStorage.getItem('konmari_boxes');
+              const savedSettings = localStorage.getItem('konmari_settings');
+              
+              if (savedBoxes) {
+                const parsedBoxes = JSON.parse(savedBoxes);
+                setBoxes(parsedBoxes);
+                console.log(`Loaded ${parsedBoxes.length} boxes from storage`);
+              }
+              
+              if (savedSettings) {
+                const parsedSettings = JSON.parse(savedSettings);
+                setSettings(prev => ({ ...prev, ...parsedSettings }));
+              }
+              
+              if (!savedBoxes) {
+                const backupData = sessionStorage.getItem('konmari_backup');
+                if (backupData) {
+                  const parsed = JSON.parse(backupData);
+                  if (parsed.boxes) {
+                    setBoxes(parsed.boxes);
+                    console.log(`Restored ${parsed.boxes.length} boxes from backup`);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Load failed:', error);
+              setSaveStatus('error');
+            }
+          };
+
+          const syncToGoogleSheets = async (boxesData) => {
+            if (!settings.googleSheetsConnected || !settings.spreadsheetId || !settings.apiKey) {
+              return false;
+            }
+            
+            try {
+              const headers = ['Box ID', 'Contents', 'Location', 'Packed By', 'Date Created', 'QR Code', 'Photo URL'];
+              const sheetData = [
+                headers,
+                ...boxesData.map(box => [
+                  box.id || '',
+                  box.contents || '',
+                  locations.find(l => l.value === box.location)?.label || '',
+                  box.packedBy || '',
+                  box.timestamp ? new Date(box.timestamp).toLocaleDateString() : '',
+                  `KONMARI-${box.id}`,
+                  box.photo ? 'Photo attached' : 'No photo'
+                ])
+              ];
+              
+              const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:clear?key=${settings.apiKey}`;
+              
+              await fetch(clearUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+              });
+              
+              const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:append?valueInputOption=USER_ENTERED&key=${settings.apiKey}`;
+              
+              const response = await fetch(updateUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ values: sheetData })
+              });
+              
+              if (response.ok) {
+                console.log(`✅ Synced ${boxesData.length} boxes to Google Sheets`);
+                return true;
+              } else {
+                console.error('Google Sheets sync error');
+                return false;
+              }
+              
+            } catch (error) {
+              console.error('Google Sheets sync failed:', error);
+              return false;
+            }
+          };
+
+          const syncToCloud = () => {
+            const syncData = {
+              boxes,
+              timestamp: Date.now().toString(),
+              lastUpdatedBy: settings.userName
+            };
+            
+            if (shareCode) {
+              localStorage.setItem(`sync_${shareCode}`, JSON.stringify(syncData));
+            }
+            
+            saveToMultipleLocations({ boxes, settings });
+            
+            if (settings.autoGoogleSync && settings.googleSheetsConnected) {
+              syncToGoogleSheets(boxes);
+            }
+          };
+
           const startRealtimeSync = () => {
             if (syncIntervalRef.current) {
               clearInterval(syncIntervalRef.current);
@@ -153,132 +230,7 @@
             }, 2000);
           };
 
-          // Enhanced data persistence
-          const saveToMultipleLocations = (data) => {
-            setSaveStatus('saving');
-            try {
-              // Save to localStorage
-              localStorage.setItem('konmari_boxes', JSON.stringify(data.boxes || []));
-              localStorage.setItem('konmari_settings', JSON.stringify(data.settings || settings));
-              
-              // Save to sessionStorage as backup
-              sessionStorage.setItem('konmari_backup', JSON.stringify(data));
-              
-              // Save with timestamp
-              const timestampedData = {
-                ...data,
-                lastSaved: new Date().toISOString(),
-                version: '1.0'
-              };
-              localStorage.setItem('konmari_full_backup', JSON.stringify(timestampedData));
-              
-              // Auto-export every 5 boxes
-              if (data.boxes && data.boxes.length > 0 && data.boxes.length % 5 === 0) {
-                autoExportData();
-              }
-              
-              setSaveStatus('saved');
-              return true;
-            } catch (error) {
-              console.error('Save failed:', error);
-              setSaveStatus('error');
-              return false;
-            }
-          };
-
-          // Load data from multiple sources
-          const loadSavedData = () => {
-            try {
-              // Try to load from localStorage first
-              const savedBoxes = localStorage.getItem('konmari_boxes');
-              const savedSettings = localStorage.getItem('konmari_settings');
-              
-              if (savedBoxes) {
-                const parsedBoxes = JSON.parse(savedBoxes);
-                setBoxes(parsedBoxes);
-                console.log(`Loaded ${parsedBoxes.length} boxes from storage`);
-              }
-              
-              if (savedSettings) {
-                const parsedSettings = JSON.parse(savedSettings);
-                setSettings(prev => ({ ...prev, ...parsedSettings }));
-              }
-              
-              // Check for backup data if main data is missing
-              if (!savedBoxes) {
-                const backupData = sessionStorage.getItem('konmari_backup');
-                if (backupData) {
-                  const parsed = JSON.parse(backupData);
-                  if (parsed.boxes) {
-                    setBoxes(parsed.boxes);
-                    console.log(`Restored ${parsed.boxes.length} boxes from backup`);
-                  }
-                }
-              }
-            } catch (error) {
-              console.error('Load failed:', error);
-              setSaveStatus('error');
-            }
-          };
-
-          // Enhanced Google Sheets sync
-          const syncToGoogleSheets = async (boxesData) => {
-            if (!settings.googleSheetsConnected || !settings.spreadsheetId || !settings.apiKey) {
-              return false;
-            }
-            
-            try {
-              // Prepare data for Google Sheets
-              const headers = ['Box ID', 'Contents', 'Location', 'Packed By', 'Date Created', 'QR Code', 'Photo URL'];
-              const sheetData = [
-                headers,
-                ...boxesData.map(box => [
-                  box.id || '',
-                  box.contents || '',
-                  locations.find(l => l.value === box.location)?.label || '',
-                  box.packedBy || '',
-                  box.timestamp ? new Date(box.timestamp).toLocaleDateString() : '',
-                  `KONMARI-${box.id}`,
-                  box.photo ? 'Photo attached' : 'No photo'
-                ])
-              ];
-              
-              // Clear existing data first
-              const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:clear?key=${settings.apiKey}`;
-              
-              await fetch(clearUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-              });
-              
-              // Add new data
-              const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:append?valueInputOption=USER_ENTERED&key=${settings.apiKey}`;
-              
-              const response = await fetch(updateUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ values: sheetData })
-              });
-              
-              if (response.ok) {
-                console.log(`✅ Synced ${boxesData.length} boxes to Google Sheets`);
-                return true;
-              } else {
-                const error = await response.json();
-                console.error('Google Sheets sync error:', error);
-                return false;
-              }
-              
-            } catch (error) {
-              console.error('Google Sheets sync failed:', error);
-              return false;
-            }
-          };
-
-          // Initialize session
           useEffect(() => {
-            // Check if user was previously authenticated
             const authStatus = localStorage.getItem('konmari_auth');
             if (authStatus === 'authenticated') {
               setIsAuthenticated(true);
@@ -288,7 +240,6 @@
             setSessionId(newSessionId);
             setIsConnected(true);
             
-            // Load saved data
             loadSavedData();
             
             return () => {
@@ -298,14 +249,12 @@
             };
           }, []);
 
-          // Start sync when settings change
           useEffect(() => {
             if (settings.autoSync && shareCode && isAuthenticated) {
               startRealtimeSync();
             }
           }, [settings.autoSync, shareCode, isAuthenticated]);
 
-          // Handle password authentication
           const handleLogin = () => {
             if (passwordInput === APP_PASSWORD) {
               setIsAuthenticated(true);
@@ -356,7 +305,6 @@
               alert('Please connect your label printer in settings first.');
               return;
             }
-            
             alert(`Printing label for box ${box.id}...`);
           };
 
@@ -486,504 +434,426 @@
             return locations.find(loc => loc.value === location) || locations[0];
           };
 
-          // If not authenticated, show login screen
           if (!isAuthenticated) {
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl shadow-xl p-8 max-w-sm w-full">
-                  <div className="text-center mb-8">
-                    <h1 className="text-2xl font-light text-gray-800 mb-2">✨ KonMari Moving</h1>
-                    <p className="text-gray-600 text-sm">Private access for LC & JY</p>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Enter Password</label>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          value={passwordInput}
-                          onChange={(e) => setPasswordInput(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                          placeholder="Password"
-                          className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          {showPassword ? '🙈' : '👁️'}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={handleLogin}
-                      className="w-full bg-blue-600 text-white py-3 px-6 rounded-2xl hover:bg-blue-700 transition-all duration-200 font-medium"
-                    >
-                      Access App
-                    </button>
-                  </div>
-                  
-                  <div className="mt-6 text-center text-xs text-gray-400">
-                    <p>Secure access for authorized users only</p>
-                  </div>
-                </div>
-              </div>
-            );
+            return React.createElement('div', {
+              className: "min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4"
+            }, React.createElement('div', {
+              className: "bg-white rounded-3xl shadow-xl p-8 max-w-sm w-full"
+            }, 
+              React.createElement('div', { className: "text-center mb-8" },
+                React.createElement('h1', { className: "text-2xl font-light text-gray-800 mb-2" }, "✨ KonMari Moving"),
+                React.createElement('p', { className: "text-gray-600 text-sm" }, "Private access for LC & JY")
+              ),
+              React.createElement('div', { className: "space-y-4" },
+                React.createElement('div', null,
+                  React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Enter Password"),
+                  React.createElement('div', { className: "relative" },
+                    React.createElement('input', {
+                      type: showPassword ? "text" : "password",
+                      value: passwordInput,
+                      onChange: (e) => setPasswordInput(e.target.value),
+                      onKeyPress: (e) => e.key === 'Enter' && handleLogin(),
+                      placeholder: "Password",
+                      className: "w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    }),
+                    React.createElement('button', {
+                      type: "button",
+                      onClick: () => setShowPassword(!showPassword),
+                      className: "absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    }, showPassword ? '🙈' : '👁️')
+                  )
+                ),
+                React.createElement('button', {
+                  onClick: handleLogin,
+                  className: "w-full bg-blue-600 text-white py-3 px-6 rounded-2xl hover:bg-blue-700 transition-all duration-200 font-medium"
+                }, "Access App")
+              ),
+              React.createElement('div', { className: "mt-6 text-center text-xs text-gray-400" },
+                React.createElement('p', null, "Secure access for authorized users only")
+              )
+            ));
           }
 
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-              <div className="max-w-md mx-auto p-4 pb-20">
-                {/* Header */}
-                <div className="text-center mb-6">
-                  <h1 className="text-2xl font-light text-gray-800 mb-1">✨ KonMari Moving</h1>
-                  <p className="text-gray-600 text-sm font-light">Keep only what sparks joy</p>
-                  
-                  {/* Save Status */}
-                  <div className="flex justify-center items-center gap-2 mt-2">
-                    {saveStatus === 'saving' && (
-                      <div className="flex items-center gap-1 text-blue-600 text-xs">
-                        <span>💾</span>
-                        <span>Saving...</span>
-                      </div>
-                    )}
-                    {saveStatus === 'saved' && (
-                      <div className="flex items-center gap-1 text-green-600 text-xs">
-                        <span>✅</span>
-                        <span>Saved</span>
-                      </div>
-                    )}
-                    {saveStatus === 'error' && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs">
-                        <span>⚠️</span>
-                        <span>Save Error</span>
-                      </div>
-                    )}
-                    {isConnected && collaborators.length > 1 && (
-                      <div className="flex items-center gap-1 text-green-600 text-xs ml-2">
-                        <Users />
-                        <span>{collaborators.length} users</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+          return React.createElement('div', {
+            className: "min-h-screen bg-gradient-to-br from-pink-50 to-purple-50"
+          }, React.createElement('div', {
+            className: "max-w-md mx-auto p-4 pb-20"
+          },
+            React.createElement('div', { className: "text-center mb-6" },
+              React.createElement('h1', { className: "text-2xl font-light text-gray-800 mb-1" }, "✨ KonMari Moving"),
+              React.createElement('p', { className: "text-gray-600 text-sm font-light" }, "Keep only what sparks joy"),
+              React.createElement('div', { className: "flex justify-center items-center gap-2 mt-2" },
+                saveStatus === 'saving' && React.createElement('div', { className: "flex items-center gap-1 text-blue-600 text-xs" },
+                  React.createElement('span', null, '💾'),
+                  React.createElement('span', null, 'Saving...')
+                ),
+                saveStatus === 'saved' && React.createElement('div', { className: "flex items-center gap-1 text-green-600 text-xs" },
+                  React.createElement('span', null, '✅'),
+                  React.createElement('span', null, 'Saved')
+                ),
+                saveStatus === 'error' && React.createElement('div', { className: "flex items-center gap-1 text-red-600 text-xs" },
+                  React.createElement('span', null, '⚠️'),
+                  React.createElement('span', null, 'Save Error')
+                ),
+                isConnected && collaborators.length > 1 && React.createElement('div', { className: "flex items-center gap-1 text-green-600 text-xs ml-2" },
+                  React.createElement(Users),
+                  React.createElement('span', null, `${collaborators.length} users`)
+                )
+              )
+            ),
+            React.createElement('div', { className: "flex gap-2 mb-6" },
+              React.createElement('button', {
+                onClick: generateShareCode,
+                className: "flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all duration-200 text-sm"
+              },
+                React.createElement(Share2),
+                shareCode ? 'Share' : 'Collaborate'
+              ),
+              React.createElement('button', {
+                onClick: exportToGoogleSheets,
+                className: "flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-all duration-200 text-sm"
+              },
+                React.createElement(FileSpreadsheet),
+                'Sheets'
+              ),
+              React.createElement('button', {
+                onClick: () => setShowSettingsModal(true),
+                className: "flex items-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200 text-sm"
+              },
+                React.createElement(Settings)
+              ),
+              React.createElement('button', {
+                onClick: handleLogout,
+                className: "flex items-center gap-1 px-2 py-2 bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-all duration-200 text-sm",
+                title: "Logout"
+              }, '🚪')
+            ),
+            React.createElement('div', { className: "grid grid-cols-4 gap-2 mb-6" },
+              locations.map(loc => 
+                React.createElement('div', {
+                  key: loc.value,
+                  className: `${loc.color} rounded-2xl p-3 border text-center`
+                },
+                  React.createElement('div', { className: "text-lg mb-1" }, loc.icon),
+                  React.createElement('div', { className: "text-lg font-light" }, boxes.filter(box => box.location === loc.value).length),
+                  React.createElement('div', { className: "text-xs font-medium" }, loc.label)
+                )
+              )
+            ),
+            React.createElement('div', { className: "flex bg-white rounded-full p-1 shadow-lg border mb-6" },
+              React.createElement('button', {
+                onClick: () => setActiveTab('pack'),
+                className: `flex-1 py-2 px-4 rounded-full transition-all duration-200 text-sm ${
+                  activeTab === 'pack' 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'text-gray-600 hover:text-blue-600'
+                }`
+              },
+                React.createElement(Plus, { className: "inline mr-1" }),
+                'Pack'
+              ),
+              React.createElement('button', {
+                onClick: () => setActiveTab('boxes'),
+                className: `flex-1 py-2 px-4 rounded-full transition-all duration-200 text-sm ${
+                  activeTab === 'boxes' 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'text-gray-600 hover:text-blue-600'
+                }`
+              },
+                React.createElement(Package, { className: "inline mr-1" }),
+                `Boxes (${boxes.length})`
+              )
+            ),
+            activeTab === 'pack' && React.createElement('div', { className: "bg-white rounded-3xl shadow-xl p-6 border" },
+              React.createElement('h2', { className: "text-xl font-light text-center mb-6 text-gray-800" },
+                editingId ? 'Edit Box' : '📦 Pack a Box'
+              ),
+              React.createElement('div', { className: "space-y-4" },
+                React.createElement('div', null,
+                  React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Photo (optional)"),
+                  React.createElement('button', {
+                    onClick: () => cameraInputRef.current?.click(),
+                    className: "w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center hover:border-blue-400 transition-colors"
+                  },
+                    currentBox.photo ? React.createElement('img', {
+                      src: currentBox.photo,
+                      alt: "Box contents",
+                      className: "w-full h-full object-cover rounded-2xl"
+                    }) : React.createElement(React.Fragment, null,
+                      React.createElement(Camera, { className: "text-gray-400 mb-2 text-2xl" }),
+                      React.createElement('span', { className: "text-sm text-gray-500" }, "Tap to add photo (optional)")
+                    )
+                  ),
+                  React.createElement('input', {
+                    ref: cameraInputRef,
+                    type: "file",
+                    accept: "image/*",
+                    capture: "environment",
+                    onChange: handlePhotoCapture,
+                    className: "hidden"
+                  })
+                ),
+                React.createElement('div', null,
+                  React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Describe contents"),
+                  React.createElement('textarea', {
+                    value: currentBox.contents,
+                    onChange: (e) => setCurrentBox(prev => ({ ...prev, contents: e.target.value })),
+                    placeholder: "Winter clothes, books, kitchen items...",
+                    rows: 3,
+                    className: "w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                  })
+                ),
+                React.createElement('div', null,
+                  React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Where is this going?"),
+                  React.createElement('div', { className: "grid grid-cols-2 gap-2" },
+                    locations.map(loc => 
+                      React.createElement('button', {
+                        key: loc.value,
+                        onClick: () => setCurrentBox(prev => ({ ...prev, location: loc.value })),
+                        className: `p-3 rounded-2xl border-2 transition-all duration-200 ${
+                          currentBox.location === loc.value ? loc.color : 'border-gray-200 hover:border-gray-300'
+                        }`
+                      },
+                        React.createElement('div', { className: "text-lg mb-1" }, loc.icon),
+                        React.createElement('div', { className: "text-xs font-medium" }, loc.label)
+                      )
+                    )
+                  )
+                ),
+                React.createElement('div', { className: "flex gap-3 pt-4" },
+                  React.createElement('button', {
+                    onClick: editingId ? updateBox : addBox,
+                    className: "flex-1 bg-green-600 text-white py-3 px-6 rounded-2xl hover:bg-green-700 transition-all duration-200 font-medium flex items-center justify-center gap-2"
+                  },
+                    React.createElement(Heart),
+                    editingId ? 'Update Box' : 'Pack Box'
+                  ),
+                  editingId && React.createElement('button', {
+                    onClick: resetForm,
+                    className: "px-6 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all duration-200"
+                  }, "Cancel")
+                )
+              )
+            ),
+            activeTab === 'boxes' && React.createElement('div', null,
+              React.createElement('div', { className: "mb-4" },
+                React.createElement('div', { className: "relative" },
+                  React.createElement(Search, { className: "absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" }),
+                  React.createElement('input', {
+                    type: "text",
+                    value: searchTerm,
+                    onChange: (e) => setSearchTerm(e.target.value),
+                    placeholder: "Search your boxes...",
+                    className: "w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  })
+                )
+              ),
+              React.createElement('div', { className: "space-y-4" },
+                filteredBoxes.map(box => {
+                  const locationInfo = getLocationInfo(box.location);
+                  return React.createElement('div', {
+                    key: box.id,
+                    className: "bg-white rounded-2xl shadow-lg p-4 border"
+                  },
+                    React.createElement('div', { className: "flex justify-between items-start mb-3" },
+                      React.createElement('div', { className: "flex items-center gap-2" },
+                        React.createElement('span', { className: "text-lg font-bold text-blue-600" }, box.id),
+                        React.createElement('div', { className: `px-2 py-1 rounded-full text-xs ${locationInfo.color} border` },
+                          locationInfo.icon + ' ' + locationInfo.label
+                        )
+                      ),
+                      React.createElement('div', { className: "flex gap-1" },
+                        React.createElement('button', {
+                          onClick: () => printLabel(box),
+                          className: "text-purple-600 hover:text-purple-800 p-1"
+                        }, React.createElement(Printer)),
+                        React.createElement('button', {
+                          onClick: () => editBox(box),
+                          className: "text-blue-600 hover:text-blue-800 p-1"
+                        }, React.createElement(Edit2)),
+                        React.createElement('button', {
+                          onClick: () => deleteBox(box.id),
+                          className: "text-red-600 hover:text-red-800 p-1"
+                        }, React.createElement(Trash2))
+                      )
+                    ),
+                    box.photo && React.createElement('img', {
+                      src: box.photo,
+                      alt: `Box ${box.id}`,
+                      className: "w-full h-32 object-cover rounded-xl mb-3"
+                    }),
+                    React.createElement('p', { className: "text-gray-700 text-sm mb-2" }, box.contents),
+                    box.packedBy && React.createElement('div', { className: "text-xs text-gray-400" },
+                      `Packed by ${box.packedBy}`
+                    )
+                  );
+                })
+              ),
+              filteredBoxes.length === 0 && React.createElement('div', { className: "text-center py-12" },
+                React.createElement('div', { className: "text-4xl mb-4" }, '📦'),
+                React.createElement('p', { className: "text-gray-500" },
+                  searchTerm ? 'No boxes match your search.' : 'No boxes yet. Start packing!'
+                )
+              )
+            ),
+            showShareModal && React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" },
+              React.createElement('div', { className: "bg-white rounded-3xl p-6 max-w-sm w-full" },
+                React.createElement('h3', { className: "text-lg font-semibold mb-4 text-center" }, "Share Session"),
+                React.createElement('p', { className: "text-gray-600 mb-4 text-center text-sm" }, "Share this code with your partner:"),
+                React.createElement('div', { className: "flex items-center gap-2 mb-4" },
+                  React.createElement('div', { className: "flex-1 bg-gray-100 rounded-2xl p-3 text-center" },
+                    React.createElement('span', { className: "text-xl font-bold text-blue-600" }, shareCode)
+                  ),
+                  React.createElement('button', {
+                    onClick: copyShareCode,
+                    className: "flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors text-sm"
+                  },
+                    copied ? React.createElement(Check) : React.createElement(Copy),
+                    copied ? 'Copied!' : 'Copy'
+                  )
+                ),
+                React.createElement('div', { className: "space-y-3" },
+                  React.createElement('div', null,
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Join existing session:"),
+                    React.createElement('div', { className: "flex gap-2" },
+                      React.createElement('input', {
+                        type: "text",
+                        placeholder: "Enter code",
+                        className: "flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm",
+                        onKeyPress: (e) => e.key === 'Enter' && joinSession(e.target.value)
+                      }),
+                      React.createElement('button', {
+                        onClick: (e) => {
+                          const input = e.target.previousElementSibling;
+                          joinSession(input.value);
+                        },
+                        className: "px-4 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
+                      }, "Join")
+                    )
+                  )
+                ),
+                React.createElement('button', {
+                  onClick: () => setShowShareModal(false),
+                  className: "w-full mt-4 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-colors"
+                }, "Close")
+              )
+            ),
+            showSettingsModal && React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" },
+              React.createElement('div', { className: "bg-white rounded-3xl p-6 max-w-sm w-full max-h-[80vh] overflow-y-auto" },
+                React.createElement('h3', { className: "text-lg font-semibold mb-4 text-center" }, "Settings"),
+                React.createElement('div', { className: "space-y-4" },
+                  React.createElement('div', null,
+                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Who are you?"),
+                    React.createElement('select', {
+                      value: settings.userName,
+                      onChange: (e) => setSettings(prev => ({ ...prev, userName: e.target.value })),
+                      className: "w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    },
+                      React.createElement('option', { value: "LC" }, "LC"),
+                      React.createElement('option', { value: "JY" }, "JY")
+                    )
+                  ),
+                  React.createElement('div', { className: "border-t pt-4" },
+                    React.createElement('h4', { className: "font-medium text-gray-800 mb-2" }, "Label Printer"),
+                    React.createElement('label', { className: "flex items-center gap-2 mb-2" },
+                      React.createElement('input', {
+                        type: "checkbox",
+                        checked: settings.printerConnected,
+                        onChange: (e) => setSettings(prev => ({ ...prev, printerConnected: e.target.checked })),
+                        className: "w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      }),
+                      React.createElement('span', { className: "text-sm" }, "Printer connected")
+                    )
+                  ),
+                  React.createElement('div', { className: "border-t pt-4" },
+                    React.createElement('h4', { className: "font-medium text-gray-800 mb-2" }, "Google Sheets"),
+                    React.createElement('div', { className: "bg-green-50 border border-green-200 rounded-2xl p-3 mb-3" },
+                      React.createElement('div', { className: "flex items-center gap-2 text-green-700 text-sm" },
+                        React.createElement('span', null, '✅'),
+                        React.createElement('span', null, 'Connected to your Google Sheet')
+                      ),
+                      React.createElement('div', { className: "text-xs text-green-600 mt-1" },
+                        `Auto-syncing to: ...${settings.spreadsheetId.slice(-10)}`
+                      )
+                    ),
+                    React.createElement('label', { className: "flex items-center gap-2 mb-2" },
+                      React.createElement('input', {
+                        type: "checkbox",
+                        checked: settings.autoGoogleSync,
+                        onChange: (e) => setSettings(prev => ({ ...prev, autoGoogleSync: e.target.checked })),
+                        className: "w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      }),
+                      React.createElement('span', { className: "text-sm" }, "Auto-sync every box to Google Sheets")
+                    ),
+                    React.createElement('button', {
+                      onClick: exportToGoogleSheets,
+                      className: "w-full mt-2 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
+                    }, "📊 Sync Now to Google Sheets")
+                  ),
+                  React.createElement('div', { className: "border-t pt-4" },
+                    React.createElement('label', { className: "flex items-center gap-2" },
+                      React.createElement('input', {
+                        type: "checkbox",
+                        checked: settings.autoSync,
+                        onChange: (e) => setSettings(prev => ({ ...prev, autoSync: e.target.checked })),
+                        className: "w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      }),
+                      React.createElement('span', { className: "text-sm" }, "Auto-sync with partner")
+                    )
+                  ),
+                  React.createElement('div', { className: "border-t pt-4" },
+                    React.createElement('div', { className: "flex gap-2 text-sm" },
+                      React.createElement('button', {
+                        onClick: exportData,
+                        className: "flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200"
+                      },
+                        React.createElement(Download),
+                        'Export'
+                      ),
+                      React.createElement('label', { className: "flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200 cursor-pointer" },
+                        React.createElement(Upload),
+                        'Import',
+                        React.createElement('input', {
+                          type: "file",
+                          accept: ".json",
+                          onChange: importData,
+                          className: "hidden"
+                        })
+                      ),
+                      React.createElement('button', {
+                        onClick: () => {
+                          const dataStr = JSON.stringify({ boxes, settings, backupDate: new Date().toISOString() }, null, 2);
+                          const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                          const url = URL.createObjectURL(dataBlob);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = `konmari-manual-backup-${new Date().toISOString().split('T')[0]}.json`;
+                          link.click();
+                          alert('✅ Manual backup downloaded!');
+                        },
+                        className: "flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200",
+                        title: "Download Backup"
+                      }, '💾')
+                    )
+                  )
+                ),
+                React.createElement('div', { className: "flex gap-2 mt-6" },
+                  React.createElement('button', {
+                    onClick: saveSettings,
+                    className: "flex-1 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors"
+                  }, "Save"),
+                  React.createElement('button', {
+                    onClick: () => setShowSettingsModal(false),
+                    className: "px-6 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-colors"
+                  }, "Cancel")
+                )
+              )
+            )
+          ));
+        }
 
-                {/* Quick Actions */}
-                <div className="flex gap-2 mb-6">
-                  <button
-                    onClick={generateShareCode}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all duration-200 text-sm"
-                  >
-                    <Share2 />
-                    {shareCode ? 'Share' : 'Collaborate'}
-                  </button>
-                  
-                  <button
-                    onClick={exportToGoogleSheets}
-                    className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-all duration-200 text-sm"
-                  >
-                    <FileSpreadsheet />
-                    Sheets
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowSettingsModal(true)}
-                    className="flex items-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200 text-sm"
-                  >
-                    <Settings />
-                  </button>
-                  
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-1 px-2 py-2 bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-all duration-200 text-sm"
-                    title="Logout"
-                  >
-                    🚪
-                  </button>
-                </div>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-4 gap-2 mb-6">
-                  {locations.map(loc => (
-                    <div key={loc.value} className={`${loc.color} rounded-2xl p-3 border text-center`}>
-                      <div className="text-lg mb-1">{loc.icon}</div>
-                      <div className="text-lg font-light">{boxes.filter(box => box.location === loc.value).length}</div>
-                      <div className="text-xs font-medium">{loc.label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Navigation Tabs */}
-                <div className="flex bg-white rounded-full p-1 shadow-lg border mb-6">
-                  <button
-                    onClick={() => setActiveTab('pack')}
-                    className={`flex-1 py-2 px-4 rounded-full transition-all duration-200 text-sm ${
-                      activeTab === 'pack' 
-                        ? 'bg-blue-600 text-white shadow-md' 
-                        : 'text-gray-600 hover:text-blue-600'
-                    }`}
-                  >
-                    <Plus className="inline mr-1" />
-                    Pack
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('boxes')}
-                    className={`flex-1 py-2 px-4 rounded-full transition-all duration-200 text-sm ${
-                      activeTab === 'boxes' 
-                        ? 'bg-blue-600 text-white shadow-md' 
-                        : 'text-gray-600 hover:text-blue-600'
-                    }`}
-                  >
-                    <Package className="inline mr-1" />
-                    Boxes ({boxes.length})
-                  </button>
-                </div>
-
-                {activeTab === 'pack' && (
-                  <div className="bg-white rounded-3xl shadow-xl p-6 border">
-                    <h2 className="text-xl font-light text-center mb-6 text-gray-800">
-                      {editingId ? 'Edit Box' : '📦 Pack a Box'}
-                    </h2>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Photo (optional)</label>
-                        <button
-                          onClick={() => cameraInputRef.current?.click()}
-                          className="w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center hover:border-blue-400 transition-colors"
-                        >
-                          {currentBox.photo ? (
-                            <img src={currentBox.photo} alt="Box contents" className="w-full h-full object-cover rounded-2xl" />
-                          ) : (
-                            <>
-                              <Camera className="text-gray-400 mb-2 text-2xl" />
-                              <span className="text-sm text-gray-500">Tap to add photo (optional)</span>
-                            </>
-                          )}
-                        </button>
-                        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoCapture} className="hidden" />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Describe contents</label>
-                        <textarea
-                          value={currentBox.contents}
-                          onChange={(e) => setCurrentBox(prev => ({ ...prev, contents: e.target.value }))}
-                          placeholder="Winter clothes, books, kitchen items..."
-                          rows={3}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Where is this going?</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {locations.map(loc => (
-                            <button
-                              key={loc.value}
-                              onClick={() => setCurrentBox(prev => ({ ...prev, location: loc.value }))}
-                              className={`p-3 rounded-2xl border-2 transition-all duration-200 ${
-                                currentBox.location === loc.value ? loc.color : 'border-gray-200 hover:border-gray-300'
-                              }`}
-                            >
-                              <div className="text-lg mb-1">{loc.icon}</div>
-                              <div className="text-xs font-medium">{loc.label}</div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3 pt-4">
-                        <button
-                          onClick={editingId ? updateBox : addBox}
-                          className="flex-1 bg-green-600 text-white py-3 px-6 rounded-2xl hover:bg-green-700 transition-all duration-200 font-medium flex items-center justify-center gap-2"
-                        >
-                          <Heart />
-                          {editingId ? 'Update Box' : 'Pack Box'}
-                        </button>
-                        
-                        {editingId && (
-                          <button
-                            onClick={resetForm}
-                            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all duration-200"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'boxes' && (
-                  <div>
-                    <div className="mb-4">
-                      <div className="relative">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input
-                          type="text"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="Search your boxes..."
-                          className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      {filteredBoxes.map(box => {
-                        const locationInfo = getLocationInfo(box.location);
-                        return (
-                          <div key={box.id} className="bg-white rounded-2xl shadow-lg p-4 border">
-                            <div className="flex justify-between items-start mb-3">
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg font-bold text-blue-600">{box.id}</span>
-                                <div className={`px-2 py-1 rounded-full text-xs ${locationInfo.color} border`}>
-                                  {locationInfo.icon} {locationInfo.label}
-                                </div>
-                              </div>
-                              <div className="flex gap-1">
-                                <button 
-                                  onClick={() => printLabel(box)} 
-                                  className="text-purple-600 hover:text-purple-800 p-1"
-                                >
-                                  <Printer />
-                                </button>
-                                <button onClick={() => editBox(box)} className="text-blue-600 hover:text-blue-800 p-1">
-                                  <Edit2 />
-                                </button>
-                                <button onClick={() => deleteBox(box.id)} className="text-red-600 hover:text-red-800 p-1">
-                                  <Trash2 />
-                                </button>
-                              </div>
-                            </div>
-                            
-                            {box.photo && (
-                              <img src={box.photo} alt={`Box ${box.id}`} className="w-full h-32 object-cover rounded-xl mb-3" />
-                            )}
-                            
-                            <p className="text-gray-700 text-sm mb-2">{box.contents}</p>
-                            
-                            {box.packedBy && (
-                              <div className="text-xs text-gray-400">
-                                Packed by {box.packedBy}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {filteredBoxes.length === 0 && (
-                      <div className="text-center py-12">
-                        <div className="text-4xl mb-4">📦</div>
-                        <p className="text-gray-500">
-                          {searchTerm ? 'No boxes match your search.' : 'No boxes yet. Start packing!'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Share Modal */}
-                {showShareModal && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full">
-                      <h3 className="text-lg font-semibold mb-4 text-center">Share Session</h3>
-                      <p className="text-gray-600 mb-4 text-center text-sm">Share this code with your partner:</p>
-                      
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="flex-1 bg-gray-100 rounded-2xl p-3 text-center">
-                          <span className="text-xl font-bold text-blue-600">{shareCode}</span>
-                        </div>
-                        <button
-                          onClick={copyShareCode}
-                          className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors text-sm"
-                        >
-                          {copied ? <Check /> : <Copy />}
-                          {copied ? 'Copied!' : 'Copy'}
-                        </button>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Join existing session:</label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              placeholder="Enter code"
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              onKeyPress={(e) => e.key === 'Enter' && joinSession(e.target.value)}
-                            />
-                            <button
-                              onClick={(e) => {
-                                const input = e.target.previousElementSibling;
-                                joinSession(input.value);
-                              }}
-                              className="px-4 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
-                            >
-                              Join
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <button
-                        onClick={() => setShowShareModal(false)}
-                        className="w-full mt-4 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-colors"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Settings Modal */}
-                {showSettingsModal && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full max-h-[80vh] overflow-y-auto">
-                      <h3 className="text-lg font-semibold mb-4 text-center">Settings</h3>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Who are you?</label>
-                          <select
-                            value={settings.userName}
-                            onChange={(e) => setSettings(prev => ({ ...prev, userName: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="LC">LC</option>
-                            <option value="JY">JY</option>
-                          </select>
-                        </div>
-                        
-                        <div className="border-t pt-4">
-                          <h4 className="font-medium text-gray-800 mb-2">Label Printer</h4>
-                          <label className="flex items-center gap-2 mb-2">
-                            <input
-                              type="checkbox"
-                              checked={settings.printerConnected}
-                              onChange={(e) => setSettings(prev => ({ ...prev, printerConnected: e.target.checked }))}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm">Printer connected</span>
-                          </label>
-                          
-                          {settings.printerConnected && (
-                            <select
-                              value={settings.printerType}
-                              onChange={(e) => setSettings(prev => ({ ...prev, printerType: e.target.value }))}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            >
-                              <option value="dymo">DYMO LabelWriter</option>
-                              <option value="brother">Brother P-touch</option>
-                              <option value="zebra">Zebra Printer</option>
-                            </select>
-                          )}
-                        </div>
-                        
-                        <div className="border-t pt-4">
-                          <h4 className="font-medium text-gray-800 mb-2">Google Sheets</h4>
-                          <div className="bg-green-50 border border-green-200 rounded-2xl p-3 mb-3">
-                            <div className="flex items-center gap-2 text-green-700 text-sm">
-                              <span>✅</span>
-                              <span>Connected to your Google Sheet</span>
-                            </div>
-                            <div className="text-xs text-green-600 mt-1">
-                              Auto-syncing to: ...{settings.spreadsheetId.slice(-10)}
-                            </div>
-                          </div>
-                          
-                          <label className="flex items-center gap-2 mb-2">
-                            <input
-                              type="checkbox"
-                              checked={settings.autoGoogleSync}
-                              onChange={(e) => setSettings(prev => ({ ...prev, autoGoogleSync: e.target.checked }))}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm">Auto-sync every box to Google Sheets</span>
-                          </label>
-                          
-                          <button
-                            onClick={exportToGoogleSheets}
-                            className="w-full mt-2 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
-                          >
-                            📊 Sync Now to Google Sheets
-                          </button>
-                        </div>
-                        
-                        <div className="border-t pt-4">
-                          <label className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={settings.autoSync}
-                              onChange={(e) => setSettings(prev => ({ ...prev, autoSync: e.target.checked }))}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm">Auto-sync with partner</span>
-                          </label>
-                        </div>
-                        
-                        <div className="border-t pt-4">
-                          <div className="flex gap-2 text-sm">
-                            <button
-                              onClick={exportData}
-                              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200"
-                            >
-                              <Download />
-                              Export
-                            </button>
-                            <label className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200 cursor-pointer">
-                              <Upload />
-                              Import
-                              <input type="file" accept=".json" onChange={importData} className="hidden" />
-                            </label>
-                            <button
-                              onClick={() => {
-                                const dataStr = JSON.stringify({ boxes, settings, backupDate: new Date().toISOString() }, null, 2);
-                                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                                const url = URL.createObjectURL(dataBlob);
-                                const link = document.createElement('a');
-                                link.href = url;
-                                link.download = `konmari-manual-backup-${new Date().toISOString().split('T')[0]}.json`;
-                                link.click();
-                                alert('✅ Manual backup downloaded!');
-                              }}
-                              className="flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200"
-                              title="Download Backup"
-                            >
-                              💾
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2 mt-6">
-                        <button
-                          onClick={saveSettings}
-                          className="flex-1 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setShowSettingsModal(false)}
-                          className="px-6 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        };
-
-        ReactDOM.render(<KonMariMovingAssistant />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(KonMariMovingAssistant));
     </script>
 </body>
 </html>
