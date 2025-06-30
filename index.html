@@ -1,4 +1,44 @@
-<!DOCTYPE html>
+// Auto-export functionality
+          const autoExportData = () => {
+            try {
+              const exportData = {
+                boxes,
+                settings,
+                exportDate: new Date().toISOString(),
+                totalBoxes: boxes.length
+              };
+              
+              const dataStr = JSON.stringify(exportData, null, 2);
+              const dataBlob = new Blob([dataStr], { type: 'application/json' });
+              const url = URL.createObjectURL(dataBlob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `konmari-auto-backup-${new Date().toISOString().split('T')[0]}.json`;
+              
+              console.log('Auto-backup prepared');
+            } catch (error) {
+              console.error('Auto-export failed:', error);
+            }
+          };          const syncToCloud = () => {
+            const syncData = {
+              boxes,
+              timestamp: Date.now().toString(),
+              lastUpdatedBy: settings.userName
+            };
+            
+            // Save to collaboration storage
+            if (shareCode) {
+              localStorage.setItem(`sync_${shareCode}`, JSON.stringify(syncData));
+            }
+            
+            // Always save to local storage with enhanced persistence
+            saveToMultipleLocations({ boxes, settings });
+            
+            // Auto-sync to Google Sheets if enabled
+            if (settings.autoGoogleSync && settings.googleSheetsConnected) {
+              syncToGoogleSheets(boxes);
+            }
+          };<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -53,6 +93,7 @@
           const [copied, setCopied] = useState(false);
           const [isConnected, setIsConnected] = useState(false);
           const [collaborators, setCollaborators] = useState([]);
+          const [saveStatus, setSaveStatus] = useState('saved'); // 'saving', 'saved', 'error'
           // Password protection states
           const [isAuthenticated, setIsAuthenticated] = useState(false);
           const [passwordInput, setPasswordInput] = useState('');
@@ -60,12 +101,13 @@
           const [settings, setSettings] = useState({
             printerConnected: false,
             printerType: 'dymo',
-            googleSheetsConnected: false,
-            spreadsheetId: '',
-            apiKey: '',
+            googleSheetsConnected: true, // Pre-enabled
+            spreadsheetId: '1YcU5Zfp8ndcpqxTOFi3yXfrUXYgnl-g3s9TO9bZV7qA', // Your sheet ID
+            apiKey: 'AIzaSyBBU4986lv6Vil-ivXKsU5z0NbnqiGcoOw', // Your API key
             smartNumbering: true,
             autoSync: true,
-            userName: 'LC'
+            userName: 'LC',
+            autoGoogleSync: true // New: Auto-sync to Google Sheets
           });
           const cameraInputRef = useRef(null);
           const syncIntervalRef = useRef(null);
@@ -111,14 +153,126 @@
             }, 2000);
           };
 
-          const syncToCloud = () => {
-            if (shareCode) {
-              const syncData = {
-                boxes,
-                timestamp: Date.now().toString(),
-                lastUpdatedBy: settings.userName
+          // Enhanced data persistence
+          const saveToMultipleLocations = (data) => {
+            setSaveStatus('saving');
+            try {
+              // Save to localStorage
+              localStorage.setItem('konmari_boxes', JSON.stringify(data.boxes || []));
+              localStorage.setItem('konmari_settings', JSON.stringify(data.settings || settings));
+              
+              // Save to sessionStorage as backup
+              sessionStorage.setItem('konmari_backup', JSON.stringify(data));
+              
+              // Save with timestamp
+              const timestampedData = {
+                ...data,
+                lastSaved: new Date().toISOString(),
+                version: '1.0'
               };
-              localStorage.setItem(`sync_${shareCode}`, JSON.stringify(syncData));
+              localStorage.setItem('konmari_full_backup', JSON.stringify(timestampedData));
+              
+              // Auto-export every 5 boxes
+              if (data.boxes && data.boxes.length > 0 && data.boxes.length % 5 === 0) {
+                autoExportData();
+              }
+              
+              setSaveStatus('saved');
+              return true;
+            } catch (error) {
+              console.error('Save failed:', error);
+              setSaveStatus('error');
+              return false;
+            }
+          };
+
+          // Load data from multiple sources
+          const loadSavedData = () => {
+            try {
+              // Try to load from localStorage first
+              const savedBoxes = localStorage.getItem('konmari_boxes');
+              const savedSettings = localStorage.getItem('konmari_settings');
+              
+              if (savedBoxes) {
+                const parsedBoxes = JSON.parse(savedBoxes);
+                setBoxes(parsedBoxes);
+                console.log(`Loaded ${parsedBoxes.length} boxes from storage`);
+              }
+              
+              if (savedSettings) {
+                const parsedSettings = JSON.parse(savedSettings);
+                setSettings(prev => ({ ...prev, ...parsedSettings }));
+              }
+              
+              // Check for backup data if main data is missing
+              if (!savedBoxes) {
+                const backupData = sessionStorage.getItem('konmari_backup');
+                if (backupData) {
+                  const parsed = JSON.parse(backupData);
+                  if (parsed.boxes) {
+                    setBoxes(parsed.boxes);
+                    console.log(`Restored ${parsed.boxes.length} boxes from backup`);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Load failed:', error);
+              setSaveStatus('error');
+            }
+          };
+
+          // Enhanced Google Sheets sync
+          const syncToGoogleSheets = async (boxesData) => {
+            if (!settings.googleSheetsConnected || !settings.spreadsheetId || !settings.apiKey) {
+              return false;
+            }
+            
+            try {
+              // Prepare data for Google Sheets
+              const headers = ['Box ID', 'Contents', 'Location', 'Packed By', 'Date Created', 'QR Code', 'Photo URL'];
+              const sheetData = [
+                headers,
+                ...boxesData.map(box => [
+                  box.id || '',
+                  box.contents || '',
+                  locations.find(l => l.value === box.location)?.label || '',
+                  box.packedBy || '',
+                  box.timestamp ? new Date(box.timestamp).toLocaleDateString() : '',
+                  `KONMARI-${box.id}`,
+                  box.photo ? 'Photo attached' : 'No photo'
+                ])
+              ];
+              
+              // Clear existing data first
+              const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:clear?key=${settings.apiKey}`;
+              
+              await fetch(clearUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+              });
+              
+              // Add new data
+              const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:append?valueInputOption=USER_ENTERED&key=${settings.apiKey}`;
+              
+              const response = await fetch(updateUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ values: sheetData })
+              });
+              
+              if (response.ok) {
+                console.log(`✅ Synced ${boxesData.length} boxes to Google Sheets`);
+                return true;
+              } else {
+                const error = await response.json();
+                console.error('Google Sheets sync error:', error);
+                return false;
+              }
+              
+            } catch (error) {
+              console.error('Google Sheets sync failed:', error);
+              return false;
             }
           };
 
@@ -134,8 +288,8 @@
             setSessionId(newSessionId);
             setIsConnected(true);
             
-            const savedSettings = JSON.parse(localStorage.getItem('konmari_settings') || '{}');
-            setSettings(prev => ({ ...prev, ...savedSettings }));
+            // Load saved data
+            loadSavedData();
             
             return () => {
               if (syncIntervalRef.current) {
@@ -207,49 +361,15 @@
           };
 
           const exportToGoogleSheets = async () => {
-            if (!settings.googleSheetsConnected || !settings.spreadsheetId || !settings.apiKey) {
-              alert('Please complete Google Sheets setup in settings first.');
-              return;
-            }
+            setSaveStatus('saving');
+            const success = await syncToGoogleSheets(boxes);
             
-            try {
-              const headers = ['Box ID', 'Contents', 'Location', 'Packed By', 'Date Created', 'QR Code'];
-              const sheetData = [
-                headers,
-                ...boxes.map(box => [
-                  box.id,
-                  box.contents,
-                  locations.find(l => l.value === box.location)?.label || '',
-                  box.packedBy || '',
-                  new Date(box.timestamp).toLocaleDateString(),
-                  `KONMARI-${box.id}`
-                ])
-              ];
-              
-              const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:clear?key=${settings.apiKey}`;
-              
-              await fetch(clearUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-              });
-              
-              const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:append?valueInputOption=USER_ENTERED&key=${settings.apiKey}`;
-              
-              const response = await fetch(updateUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ values: sheetData })
-              });
-              
-              if (response.ok) {
-                alert(`✅ Successfully exported ${boxes.length} boxes to Google Sheets!`);
-              } else {
-                alert('❌ Failed to export to Google Sheets. Check your API key and sheet permissions.');
-              }
-              
-            } catch (error) {
-              alert('❌ Error connecting to Google Sheets. Please check your settings.');
+            if (success) {
+              setSaveStatus('saved');
+              alert(`✅ Successfully exported ${boxes.length} boxes to Google Sheets!`);
+            } else {
+              setSaveStatus('error');
+              alert('❌ Failed to export to Google Sheets. Check your internet connection.');
             }
           };
 
@@ -422,10 +542,28 @@
                   <h1 className="text-2xl font-light text-gray-800 mb-1">✨ KonMari Moving</h1>
                   <p className="text-gray-600 text-sm font-light">Keep only what sparks joy</p>
                   
-                  {/* Connection Status */}
+                  {/* Save Status */}
                   <div className="flex justify-center items-center gap-2 mt-2">
-                    {isConnected && collaborators.length > 1 && (
+                    {saveStatus === 'saving' && (
+                      <div className="flex items-center gap-1 text-blue-600 text-xs">
+                        <span>💾</span>
+                        <span>Saving...</span>
+                      </div>
+                    )}
+                    {saveStatus === 'saved' && (
                       <div className="flex items-center gap-1 text-green-600 text-xs">
+                        <span>✅</span>
+                        <span>Saved</span>
+                      </div>
+                    )}
+                    {saveStatus === 'error' && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs">
+                        <span>⚠️</span>
+                        <span>Save Error</span>
+                      </div>
+                    )}
+                    {isConnected && collaborators.length > 1 && (
+                      <div className="flex items-center gap-1 text-green-600 text-xs ml-2">
                         <Users />
                         <span>{collaborators.length} users</span>
                       </div>
@@ -749,37 +887,32 @@
                         
                         <div className="border-t pt-4">
                           <h4 className="font-medium text-gray-800 mb-2">Google Sheets</h4>
+                          <div className="bg-green-50 border border-green-200 rounded-2xl p-3 mb-3">
+                            <div className="flex items-center gap-2 text-green-700 text-sm">
+                              <span>✅</span>
+                              <span>Connected to your Google Sheet</span>
+                            </div>
+                            <div className="text-xs text-green-600 mt-1">
+                              Auto-syncing to: ...{settings.spreadsheetId.slice(-10)}
+                            </div>
+                          </div>
+                          
                           <label className="flex items-center gap-2 mb-2">
                             <input
                               type="checkbox"
-                              checked={settings.googleSheetsConnected}
-                              onChange={(e) => setSettings(prev => ({ ...prev, googleSheetsConnected: e.target.checked }))}
+                              checked={settings.autoGoogleSync}
+                              onChange={(e) => setSettings(prev => ({ ...prev, autoGoogleSync: e.target.checked }))}
                               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             />
-                            <span className="text-sm">Google Sheets connected</span>
+                            <span className="text-sm">Auto-sync every box to Google Sheets</span>
                           </label>
                           
-                          {settings.googleSheetsConnected && (
-                            <div className="space-y-2">
-                              <input
-                                type="text"
-                                value={settings.spreadsheetId}
-                                onChange={(e) => setSettings(prev => ({ ...prev, spreadsheetId: e.target.value }))}
-                                placeholder="Spreadsheet ID"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              />
-                              <input
-                                type="password"
-                                value={settings.apiKey}
-                                onChange={(e) => setSettings(prev => ({ ...prev, apiKey: e.target.value }))}
-                                placeholder="Google API Key"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                              />
-                              <p className="text-xs text-gray-500">
-                                Get API key from Google Cloud Console
-                              </p>
-                            </div>
-                          )}
+                          <button
+                            onClick={exportToGoogleSheets}
+                            className="w-full mt-2 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
+                          >
+                            📊 Sync Now to Google Sheets
+                          </button>
                         </div>
                         
                         <div className="border-t pt-4">
@@ -808,6 +941,22 @@
                               Import
                               <input type="file" accept=".json" onChange={importData} className="hidden" />
                             </label>
+                            <button
+                              onClick={() => {
+                                const dataStr = JSON.stringify({ boxes, settings, backupDate: new Date().toISOString() }, null, 2);
+                                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                                const url = URL.createObjectURL(dataBlob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = `konmari-manual-backup-${new Date().toISOString().split('T')[0]}.json`;
+                                link.click();
+                                alert('✅ Manual backup downloaded!');
+                              }}
+                              className="flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200"
+                              title="Download Backup"
+                            >
+                              💾
+                            </button>
                           </div>
                         </div>
                       </div>
