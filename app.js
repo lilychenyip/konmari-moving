@@ -1,5 +1,3 @@
-import { Camera, Search, Edit2, Trash2, Download, Upload, Share2, Copy, Check, Printer, FileSpreadsheet, Settings, Users, Plus, Package, Home, User, Heart } from 'lucide-react';
-
 const KonMariMovingAssistant = () => {
   const [boxes, setBoxes] = useState([]);
   const [currentBox, setCurrentBox] = useState({
