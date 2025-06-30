@@ -145,10 +145,15 @@
 
           const syncToGoogleSheets = async (boxesData) => {
             if (!settings.googleSheetsConnected || !settings.spreadsheetId || !settings.apiKey) {
+              console.log('Google Sheets not configured');
               return false;
             }
             
             try {
+              console.log('Starting Google Sheets sync...');
+              console.log('Spreadsheet ID:', settings.spreadsheetId);
+              console.log('Number of boxes:', boxesData.length);
+              
               const headers = ['Box ID', 'Contents', 'Location', 'Packed By', 'Date Created', 'QR Code', 'Photo URL'];
               const sheetData = [
                 headers,
@@ -163,32 +168,67 @@
                 ])
               ];
               
+              // First, try to clear existing data
               const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:clear?key=${settings.apiKey}`;
+              console.log('Clearing sheet...');
               
-              await fetch(clearUrl, {
+              const clearResponse = await fetch(clearUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
                 body: JSON.stringify({})
               });
               
-              const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1:append?valueInputOption=USER_ENTERED&key=${settings.apiKey}`;
+              if (!clearResponse.ok) {
+                const clearError = await clearResponse.text();
+                console.error('Clear failed:', clearError);
+                throw new Error(`Clear failed: ${clearResponse.status} - ${clearError}`);
+              }
               
-              const response = await fetch(updateUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ values: sheetData })
+              console.log('Sheet cleared successfully');
+              
+              // Then add new data
+              const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1?valueInputOption=USER_ENTERED&key=${settings.apiKey}`;
+              console.log('Adding data to sheet...');
+              
+              const updateResponse = await fetch(updateUrl, {
+                method: 'PUT',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                body: JSON.stringify({ 
+                  values: sheetData,
+                  majorDimension: 'ROWS'
+                })
               });
               
-              if (response.ok) {
-                console.log(`✅ Synced ${boxesData.length} boxes to Google Sheets`);
-                return true;
-              } else {
-                console.error('Google Sheets sync error');
-                return false;
+              if (!updateResponse.ok) {
+                const updateError = await updateResponse.text();
+                console.error('Update failed:', updateError);
+                throw new Error(`Update failed: ${updateResponse.status} - ${updateError}`);
               }
+              
+              const result = await updateResponse.json();
+              console.log('✅ Successfully synced to Google Sheets:', result);
+              return true;
               
             } catch (error) {
               console.error('Google Sheets sync failed:', error);
+              
+              // Show specific error messages
+              if (error.message.includes('403')) {
+                alert('❌ Google Sheets Error: API key doesn\'t have permission. Please check:\n1. API key is correct\n2. Google Sheets API is enabled\n3. Sheet is shared publicly');
+              } else if (error.message.includes('404')) {
+                alert('❌ Google Sheets Error: Spreadsheet not found. Please check:\n1. Spreadsheet ID is correct\n2. Sheet is shared with "Anyone with link can edit"');
+              } else if (error.message.includes('400')) {
+                alert('❌ Google Sheets Error: Invalid request. The sheet might be protected or API key is invalid.');
+              } else {
+                alert(`❌ Google Sheets Error: ${error.message}\n\nPlease check your internet connection and try again.`);
+              }
+              
               return false;
             }
           };
@@ -788,7 +828,26 @@
                     React.createElement('button', {
                       onClick: exportToGoogleSheets,
                       className: "w-full mt-2 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
-                    }, "📊 Sync Now to Google Sheets")
+                    }, "📊 Sync Now to Google Sheets"),
+                    React.createElement('button', {
+                      onClick: async () => {
+                        // Test API key and permissions
+                        try {
+                          const testUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}?key=${settings.apiKey}`;
+                          const response = await fetch(testUrl);
+                          if (response.ok) {
+                            const data = await response.json();
+                            alert(`✅ Connection Test Successful!\nSheet Title: ${data.properties.title}\nAPI Key: Working`);
+                          } else {
+                            const error = await response.text();
+                            alert(`❌ Connection Test Failed:\n${response.status} - ${error}`);
+                          }
+                        } catch (error) {
+                          alert(`❌ Connection Test Error:\n${error.message}`);
+                        }
+                      },
+                      className: "w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors text-sm"
+                    }, "🔧 Test Google Sheets Connection")
                   ),
                   React.createElement('div', { className: "border-t pt-4" },
                     React.createElement('label', { className: "flex items-center gap-2" },
