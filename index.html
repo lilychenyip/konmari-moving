@@ -144,70 +144,58 @@
           };
 
           const syncToGoogleSheets = async (boxesData) => {
-            if (!settings.googleSheetsConnected || !settings.spreadsheetId || !settings.apiKey) {
+            if (!settings.googleSheetsConnected || !settings.spreadsheetId) {
               console.log('Google Sheets not configured');
               return false;
             }
             
             try {
-              console.log('Starting Google Sheets sync...');
-              console.log('Spreadsheet ID:', settings.spreadsheetId);
-              console.log('Number of boxes:', boxesData.length);
+              console.log('Creating CSV export for Google Sheets...');
               
-              const headers = ['Box ID', 'Contents', 'Location', 'Packed By', 'Date Created', 'QR Code', 'Photo URL'];
-              const sheetData = [
-                headers,
+              // Create CSV data
+              const headers = ['Box ID', 'Contents', 'Location', 'Packed By', 'Date Created', 'QR Code', 'Photo Status'];
+              const csvData = [
+                headers.join(','),
                 ...boxesData.map(box => [
                   box.id || '',
-                  box.contents || '',
+                  `"${(box.contents || '').replace(/"/g, '""')}"`, // Escape quotes in CSV
                   locations.find(l => l.value === box.location)?.label || '',
                   box.packedBy || '',
                   box.timestamp ? new Date(box.timestamp).toLocaleDateString() : '',
                   `KONMARI-${box.id}`,
                   box.photo ? 'Photo attached' : 'No photo'
-                ])
-              ];
+                ].join(','))
+              ].join('\n');
               
-              // Use PUT method to overwrite all data (this works with API keys)
-              const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}/values/Sheet1?valueInputOption=USER_ENTERED&key=${settings.apiKey}`;
-              console.log('Updating sheet with PUT method...');
+              // Create downloadable CSV file
+              const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+              const link = document.createElement('a');
+              const url = URL.createObjectURL(blob);
+              link.setAttribute('href', url);
+              link.setAttribute('download', `konmari-boxes-${new Date().toISOString().split('T')[0]}.csv`);
+              link.style.visibility = 'hidden';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
               
-              const updateResponse = await fetch(updateUrl, {
-                method: 'PUT',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json'
-                },
-                body: JSON.stringify({ 
-                  values: sheetData,
-                  majorDimension: 'ROWS'
-                })
-              });
+              // Show instructions
+              alert(`📊 CSV file downloaded! 
+
+To sync with your Google Sheet:
+1. Open your Google Sheet
+2. Click File → Import
+3. Choose the downloaded CSV file
+4. Select "Replace spreadsheet"
+5. Click "Import data"
+
+Your box inventory will be imported automatically!`);
               
-              if (!updateResponse.ok) {
-                const updateError = await updateResponse.text();
-                console.error('Update failed:', updateError);
-                throw new Error(`Update failed: ${updateResponse.status} - ${updateError}`);
-              }
-              
-              const result = await updateResponse.json();
-              console.log('✅ Successfully synced to Google Sheets:', result);
+              console.log('✅ CSV export completed');
               return true;
               
             } catch (error) {
-              console.error('Google Sheets sync failed:', error);
-              
-              // Show specific error messages
-              if (error.message.includes('403')) {
-                alert('❌ Google Sheets Error: Permission denied. Please:\n1. Make sure your sheet is shared as "Anyone with link can EDIT"\n2. Check if your API key has proper permissions');
-              } else if (error.message.includes('404')) {
-                alert('❌ Google Sheets Error: Spreadsheet not found. Please check:\n1. Spreadsheet ID is correct\n2. Sheet is shared publicly');
-              } else if (error.message.includes('400')) {
-                alert('❌ Google Sheets Error: Bad request. This might be an API key issue.');
-              } else {
-                alert(`❌ Google Sheets Error: ${error.message}\n\nPlease check your internet connection and try again.`);
-              }
-              
+              console.error('CSV export failed:', error);
+              alert(`❌ Export Error: ${error.message}`);
               return false;
             }
           };
@@ -807,7 +795,7 @@
                     React.createElement('button', {
                       onClick: exportToGoogleSheets,
                       className: "w-full mt-2 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
-                    }, "📊 Sync Now to Google Sheets"),
+                    }, "📊 Export CSV for Google Sheets"),
                     React.createElement('button', {
                       onClick: async () => {
                         // Test API key and permissions
