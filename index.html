@@ -3,883 +3,992 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KonMari Moving Assistant</title>
+    <title>Bloom - Pregnancy Journey Tracker</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
-</head>
-<body>
-    <div id="root"></div>
-    
-    <script type="text/babel">
-        const { useState, useRef, useEffect } = React;
-        
-        // Simple icon components
-        const Camera = () => React.createElement('span', null, '📷');
-        const Search = () => React.createElement('span', null, '🔍');
-        const Edit2 = () => React.createElement('span', null, '✏️');
-        const Trash2 = () => React.createElement('span', null, '🗑️');
-        const Download = () => React.createElement('span', null, '⬇️');
-        const Upload = () => React.createElement('span', null, '⬆️');
-        const Share2 = () => React.createElement('span', null, '📤');
-        const Copy = () => React.createElement('span', null, '📋');
-        const Check = () => React.createElement('span', null, '✅');
-        const Printer = () => React.createElement('span', null, '🖨️');
-        const FileSpreadsheet = () => React.createElement('span', null, '📊');
-        const Settings = () => React.createElement('span', null, '⚙️');
-        const Users = () => React.createElement('span', null, '👥');
-        const Plus = () => React.createElement('span', null, '➕');
-        const Package = () => React.createElement('span', null, '📦');
-        const Heart = () => React.createElement('span', null, '💝');
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #FFF9F5; color: #4A3728; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        .font-hand { font-family: 'Caveat', cursive; }
 
-        function KonMariMovingAssistant() {
-          const [boxes, setBoxes] = useState([]);
-          const [currentBox, setCurrentBox] = useState({
-            id: '',
-            contents: '',
-            location: 'storage',
-            photo: null,
-            sparksJoy: true
-          });
-          const [activeTab, setActiveTab] = useState('pack');
-          const [searchTerm, setSearchTerm] = useState('');
-          const [editingId, setEditingId] = useState(null);
-          const [shareCode, setShareCode] = useState('');
-          const [sessionId, setSessionId] = useState('');
-          const [showShareModal, setShowShareModal] = useState(false);
-          const [showSettingsModal, setShowSettingsModal] = useState(false);
-          const [copied, setCopied] = useState(false);
-          const [isConnected, setIsConnected] = useState(false);
-          const [collaborators, setCollaborators] = useState([]);
-          const [saveStatus, setSaveStatus] = useState('saved');
-          const [isAuthenticated, setIsAuthenticated] = useState(false);
-          const [passwordInput, setPasswordInput] = useState('');
-          const [showPassword, setShowPassword] = useState(false);
-          const [settings, setSettings] = useState({
-            printerConnected: false,
-            printerType: 'dymo',
-            googleSheetsConnected: true,
-            spreadsheetId: '1YcU5Zfp8ndcpqxTOFi3yXfrUXYgnl-g3s9TO9bZV7qA',
-            apiKey: 'AIzaSyBBU4986lv6Vil-ivXKsU5z0NbnqiGcoOw',
-            smartNumbering: true,
-            autoSync: true,
-            userName: 'LC',
-            autoGoogleSync: true
-          });
-          const cameraInputRef = useRef(null);
-          const syncIntervalRef = useRef(null);
-
-          const APP_PASSWORD = '170EEA';
-
-          const locations = [
-            { value: 'storage', label: 'Storage Unit', icon: '📦', color: 'bg-blue-50 border-blue-200 text-blue-700', prefix: 'ST' },
-            { value: 'yips', label: 'Yips', icon: '🏡', color: 'bg-green-50 border-green-200 text-green-700', prefix: 'YP' },
-            { value: 'lc', label: 'LC', icon: '👩', color: 'bg-purple-50 border-purple-200 text-purple-700', prefix: 'LC' },
-            { value: 'jy', label: 'JY', icon: '👨', color: 'bg-orange-50 border-orange-200 text-orange-700', prefix: 'JY' }
-          ];
-
-          const generateSmartBoxId = () => {
-            const locationInfo = locations.find(loc => loc.value === currentBox.location);
-            const prefix = locationInfo?.prefix || 'BX';
-            const locationBoxes = boxes.filter(box => box.location === currentBox.location);
-            const number = locationBoxes.length + 1;
-            return `${prefix}-${number.toString().padStart(3, '0')}`;
-          };
-
-          const saveToMultipleLocations = (data) => {
-            setSaveStatus('saving');
-            try {
-              localStorage.setItem('konmari_boxes', JSON.stringify(data.boxes || []));
-              localStorage.setItem('konmari_settings', JSON.stringify(data.settings || settings));
-              sessionStorage.setItem('konmari_backup', JSON.stringify(data));
-              
-              const timestampedData = {
-                ...data,
-                lastSaved: new Date().toISOString(),
-                version: '1.0'
-              };
-              localStorage.setItem('konmari_full_backup', JSON.stringify(timestampedData));
-              
-              setSaveStatus('saved');
-              return true;
-            } catch (error) {
-              console.error('Save failed:', error);
-              setSaveStatus('error');
-              return false;
-            }
-          };
-
-          const loadSavedData = () => {
-            try {
-              const savedBoxes = localStorage.getItem('konmari_boxes');
-              const savedSettings = localStorage.getItem('konmari_settings');
-              
-              if (savedBoxes) {
-                const parsedBoxes = JSON.parse(savedBoxes);
-                setBoxes(parsedBoxes);
-                console.log(`Loaded ${parsedBoxes.length} boxes from storage`);
-              }
-              
-              if (savedSettings) {
-                const parsedSettings = JSON.parse(savedSettings);
-                setSettings(prev => ({ ...prev, ...parsedSettings }));
-              }
-              
-              if (!savedBoxes) {
-                const backupData = sessionStorage.getItem('konmari_backup');
-                if (backupData) {
-                  const parsed = JSON.parse(backupData);
-                  if (parsed.boxes) {
-                    setBoxes(parsed.boxes);
-                    console.log(`Restored ${parsed.boxes.length} boxes from backup`);
-                  }
-                }
-              }
-            } catch (error) {
-              console.error('Load failed:', error);
-              setSaveStatus('error');
-            }
-          };
-
-          const syncToGoogleSheets = async (boxesData) => {
-            if (!settings.googleSheetsConnected || !settings.spreadsheetId) {
-              console.log('Google Sheets not configured');
-              return false;
-            }
-            
-            try {
-              console.log('Creating CSV export for Google Sheets...');
-              
-              // Create CSV data
-              const headers = ['Box ID', 'Contents', 'Location', 'Packed By', 'Date Created', 'QR Code', 'Photo Status'];
-              const csvData = [
-                headers.join(','),
-                ...boxesData.map(box => [
-                  box.id || '',
-                  `"${(box.contents || '').replace(/"/g, '""')}"`, // Escape quotes in CSV
-                  locations.find(l => l.value === box.location)?.label || '',
-                  box.packedBy || '',
-                  box.timestamp ? new Date(box.timestamp).toLocaleDateString() : '',
-                  `KONMARI-${box.id}`,
-                  box.photo ? 'Photo attached' : 'No photo'
-                ].join(','))
-              ].join('\n');
-              
-              // Create downloadable CSV file
-              const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-              const link = document.createElement('a');
-              const url = URL.createObjectURL(blob);
-              link.setAttribute('href', url);
-              link.setAttribute('download', `konmari-boxes-${new Date().toISOString().split('T')[0]}.csv`);
-              link.style.visibility = 'hidden';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              
-              // Show instructions
-              alert(`📊 CSV file downloaded! 
-
-To sync with your Google Sheet:
-1. Open your Google Sheet
-2. Click File → Import
-3. Choose the downloaded CSV file
-4. Select "Replace spreadsheet"
-5. Click "Import data"
-
-Your box inventory will be imported automatically!`);
-              
-              console.log('✅ CSV export completed');
-              return true;
-              
-            } catch (error) {
-              console.error('CSV export failed:', error);
-              alert(`❌ Export Error: ${error.message}`);
-              return false;
-            }
-          };
-
-          const syncToCloud = () => {
-            const syncData = {
-              boxes,
-              timestamp: Date.now().toString(),
-              lastUpdatedBy: settings.userName
-            };
-            
-            if (shareCode) {
-              localStorage.setItem(`sync_${shareCode}`, JSON.stringify(syncData));
-            }
-            
-            saveToMultipleLocations({ boxes, settings });
-            
-            if (settings.autoGoogleSync && settings.googleSheetsConnected) {
-              syncToGoogleSheets(boxes);
-            }
-          };
-
-          const startRealtimeSync = () => {
-            if (syncIntervalRef.current) {
-              clearInterval(syncIntervalRef.current);
-            }
-            
-            syncIntervalRef.current = setInterval(() => {
-              const syncData = localStorage.getItem(`sync_${shareCode}`);
-              if (syncData) {
-                const { boxes: syncedBoxes, timestamp } = JSON.parse(syncData);
-                const lastSync = localStorage.getItem('last_sync_timestamp') || '0';
-                
-                if (timestamp > lastSync) {
-                  setBoxes(syncedBoxes || []);
-                  localStorage.setItem('last_sync_timestamp', timestamp);
-                }
-              }
-            }, 2000);
-          };
-
-          useEffect(() => {
-            const authStatus = localStorage.getItem('konmari_auth');
-            if (authStatus === 'authenticated') {
-              setIsAuthenticated(true);
-            }
-            
-            const newSessionId = Math.random().toString(36).substring(2, 15);
-            setSessionId(newSessionId);
-            setIsConnected(true);
-            
-            loadSavedData();
-            
-            return () => {
-              if (syncIntervalRef.current) {
-                clearInterval(syncIntervalRef.current);
-              }
-            };
-          }, []);
-
-          useEffect(() => {
-            if (settings.autoSync && shareCode && isAuthenticated) {
-              startRealtimeSync();
-            }
-          }, [settings.autoSync, shareCode, isAuthenticated]);
-
-          const handleLogin = () => {
-            if (passwordInput === APP_PASSWORD) {
-              setIsAuthenticated(true);
-              localStorage.setItem('konmari_auth', 'authenticated');
-              setPasswordInput('');
-            } else {
-              alert('Incorrect password. Please try again.');
-              setPasswordInput('');
-            }
-          };
-
-          const handleLogout = () => {
-            setIsAuthenticated(false);
-            localStorage.removeItem('konmari_auth');
-            setPasswordInput('');
-          };
-
-          const generateShareCode = () => {
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            setShareCode(code);
-            setShowShareModal(true);
-            syncToCloud();
-            setCollaborators([{ name: settings.userName, id: sessionId, active: true }]);
-          };
-
-          const joinSession = (code) => {
-            setShareCode(code.toUpperCase());
-            const syncData = localStorage.getItem(`sync_${code.toUpperCase()}`);
-            if (syncData) {
-              const { boxes: sharedBoxes } = JSON.parse(syncData);
-              setBoxes(sharedBoxes || []);
-              
-              const existingCollabs = JSON.parse(localStorage.getItem(`collaborators_${code}`) || '[]');
-              const newCollab = { name: settings.userName, id: sessionId, active: true };
-              const updatedCollabs = [...existingCollabs.filter(c => c.id !== sessionId), newCollab];
-              setCollaborators(updatedCollabs);
-              localStorage.setItem(`collaborators_${code}`, JSON.stringify(updatedCollabs));
-              
-              startRealtimeSync();
-              alert('Successfully joined the session!');
-            } else {
-              alert('Session code not found. Make sure the code is correct.');
-            }
-          };
-
-          const printLabel = (box) => {
-            if (!settings.printerConnected) {
-              alert('Please connect your label printer in settings first.');
-              return;
-            }
-            alert(`Printing label for box ${box.id}...`);
-          };
-
-          const exportToGoogleSheets = async () => {
-            setSaveStatus('saving');
-            const success = await syncToGoogleSheets(boxes);
-            
-            if (success) {
-              setSaveStatus('saved');
-              alert(`✅ Successfully exported ${boxes.length} boxes to Google Sheets!`);
-            } else {
-              setSaveStatus('error');
-              alert('❌ Failed to export to Google Sheets. Check your internet connection.');
-            }
-          };
-
-          const copyShareCode = () => {
-            navigator.clipboard.writeText(shareCode);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          };
-
-          const handlePhotoCapture = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                setCurrentBox(prev => ({ ...prev, photo: event.target.result }));
-              };
-              reader.readAsDataURL(file);
-            }
-          };
-
-          const addBox = () => {
-            if (!currentBox.contents.trim()) {
-              alert('Please describe what\'s in the box');
-              return;
-            }
-
-            const newBox = {
-              ...currentBox,
-              id: generateSmartBoxId(),
-              timestamp: new Date().toISOString(),
-              packedBy: settings.userName
-            };
-
-            setBoxes(prev => [...prev, newBox]);
-            resetForm();
-            syncToCloud();
-          };
-
-          const resetForm = () => {
-            setCurrentBox({
-              id: '',
-              contents: '',
-              location: 'storage',
-              photo: null,
-              sparksJoy: true
-            });
-            setEditingId(null);
-          };
-
-          const updateBox = () => {
-            setBoxes(prev => prev.map(box => 
-              box.id === editingId ? { ...currentBox, id: editingId, packedBy: settings.userName } : box
-            ));
-            resetForm();
-            syncToCloud();
-          };
-
-          const editBox = (box) => {
-            setCurrentBox(box);
-            setEditingId(box.id);
-          };
-
-          const deleteBox = (id) => {
-            setBoxes(prev => prev.filter(box => box.id !== id));
-            syncToCloud();
-          };
-
-          const saveSettings = () => {
-            localStorage.setItem('konmari_settings', JSON.stringify(settings));
-            setShowSettingsModal(false);
-            
-            if (settings.autoSync && shareCode) {
-              startRealtimeSync();
-            }
-          };
-
-          const filteredBoxes = boxes.filter(box => 
-            box.contents.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            box.id.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-
-          const exportData = () => {
-            const dataStr = JSON.stringify({ boxes, settings }, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'konmari-moving-inventory.json';
-            link.click();
-          };
-
-          const importData = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                try {
-                  const data = JSON.parse(event.target.result);
-                  setBoxes(data.boxes || []);
-                  if (data.settings) {
-                    setSettings(prev => ({ ...prev, ...data.settings }));
-                  }
-                  syncToCloud();
-                  alert('Data imported successfully!');
-                } catch (error) {
-                  alert('Error importing data. Please check the file format.');
-                }
-              };
-              reader.readAsText(file);
-            }
-          };
-
-          const getLocationInfo = (location) => {
-            return locations.find(loc => loc.value === location) || locations[0];
-          };
-
-          if (!isAuthenticated) {
-            return React.createElement('div', {
-              className: "min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center p-4"
-            }, React.createElement('div', {
-              className: "bg-white rounded-3xl shadow-xl p-8 max-w-sm w-full"
-            }, 
-              React.createElement('div', { className: "text-center mb-8" },
-                React.createElement('h1', { className: "text-2xl font-light text-gray-800 mb-2" }, "✨ KonMari Moving"),
-                React.createElement('p', { className: "text-gray-600 text-sm" }, "Private access for LC & JY")
-              ),
-              React.createElement('div', { className: "space-y-4" },
-                React.createElement('div', null,
-                  React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Enter Password"),
-                  React.createElement('div', { className: "relative" },
-                    React.createElement('input', {
-                      type: showPassword ? "text" : "password",
-                      value: passwordInput,
-                      onChange: (e) => setPasswordInput(e.target.value),
-                      onKeyPress: (e) => e.key === 'Enter' && handleLogin(),
-                      placeholder: "Password",
-                      className: "w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    }),
-                    React.createElement('button', {
-                      type: "button",
-                      onClick: () => setShowPassword(!showPassword),
-                      className: "absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    }, showPassword ? '🙈' : '👁️')
-                  )
-                ),
-                React.createElement('button', {
-                  onClick: handleLogin,
-                  className: "w-full bg-blue-600 text-white py-3 px-6 rounded-2xl hover:bg-blue-700 transition-all duration-200 font-medium"
-                }, "Access App")
-              ),
-              React.createElement('div', { className: "mt-6 text-center text-xs text-gray-400" },
-                React.createElement('p', null, "Secure access for authorized users only")
-              )
-            ));
-          }
-
-          return React.createElement('div', {
-            className: "min-h-screen bg-gradient-to-br from-pink-50 to-purple-50"
-          }, React.createElement('div', {
-            className: "max-w-md mx-auto p-4 pb-20"
-          },
-            React.createElement('div', { className: "text-center mb-6" },
-              React.createElement('h1', { className: "text-2xl font-light text-gray-800 mb-1" }, "✨ KonMari Moving"),
-              React.createElement('p', { className: "text-gray-600 text-sm font-light" }, "Keep only what sparks joy"),
-              React.createElement('div', { className: "flex justify-center items-center gap-2 mt-2" },
-                saveStatus === 'saving' && React.createElement('div', { className: "flex items-center gap-1 text-blue-600 text-xs" },
-                  React.createElement('span', null, '💾'),
-                  React.createElement('span', null, 'Saving...')
-                ),
-                saveStatus === 'saved' && React.createElement('div', { className: "flex items-center gap-1 text-green-600 text-xs" },
-                  React.createElement('span', null, '✅'),
-                  React.createElement('span', null, 'Saved')
-                ),
-                saveStatus === 'error' && React.createElement('div', { className: "flex items-center gap-1 text-red-600 text-xs" },
-                  React.createElement('span', null, '⚠️'),
-                  React.createElement('span', null, 'Save Error')
-                ),
-                isConnected && collaborators.length > 1 && React.createElement('div', { className: "flex items-center gap-1 text-green-600 text-xs ml-2" },
-                  React.createElement(Users),
-                  React.createElement('span', null, `${collaborators.length} users`)
-                )
-              )
-            ),
-            React.createElement('div', { className: "flex gap-2 mb-6" },
-              React.createElement('button', {
-                onClick: generateShareCode,
-                className: "flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all duration-200 text-sm"
-              },
-                React.createElement(Share2),
-                shareCode ? 'Share' : 'Collaborate'
-              ),
-              React.createElement('button', {
-                onClick: exportToGoogleSheets,
-                className: "flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-all duration-200 text-sm"
-              },
-                React.createElement(FileSpreadsheet),
-                'Sheets'
-              ),
-              React.createElement('button', {
-                onClick: () => setShowSettingsModal(true),
-                className: "flex items-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200 text-sm"
-              },
-                React.createElement(Settings)
-              ),
-              React.createElement('button', {
-                onClick: handleLogout,
-                className: "flex items-center gap-1 px-2 py-2 bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-all duration-200 text-sm",
-                title: "Logout"
-              }, '🚪')
-            ),
-            React.createElement('div', { className: "grid grid-cols-4 gap-2 mb-6" },
-              locations.map(loc => 
-                React.createElement('div', {
-                  key: loc.value,
-                  className: `${loc.color} rounded-2xl p-3 border text-center`
-                },
-                  React.createElement('div', { className: "text-lg mb-1" }, loc.icon),
-                  React.createElement('div', { className: "text-lg font-light" }, boxes.filter(box => box.location === loc.value).length),
-                  React.createElement('div', { className: "text-xs font-medium" }, loc.label)
-                )
-              )
-            ),
-            React.createElement('div', { className: "flex bg-white rounded-full p-1 shadow-lg border mb-6" },
-              React.createElement('button', {
-                onClick: () => setActiveTab('pack'),
-                className: `flex-1 py-2 px-4 rounded-full transition-all duration-200 text-sm ${
-                  activeTab === 'pack' 
-                    ? 'bg-blue-600 text-white shadow-md' 
-                    : 'text-gray-600 hover:text-blue-600'
-                }`
-              },
-                React.createElement(Plus, { className: "inline mr-1" }),
-                'Pack'
-              ),
-              React.createElement('button', {
-                onClick: () => setActiveTab('boxes'),
-                className: `flex-1 py-2 px-4 rounded-full transition-all duration-200 text-sm ${
-                  activeTab === 'boxes' 
-                    ? 'bg-blue-600 text-white shadow-md' 
-                    : 'text-gray-600 hover:text-blue-600'
-                }`
-              },
-                React.createElement(Package, { className: "inline mr-1" }),
-                `Boxes (${boxes.length})`
-              )
-            ),
-            activeTab === 'pack' && React.createElement('div', { className: "bg-white rounded-3xl shadow-xl p-6 border" },
-              React.createElement('h2', { className: "text-xl font-light text-center mb-6 text-gray-800" },
-                editingId ? 'Edit Box' : '📦 Pack a Box'
-              ),
-              React.createElement('div', { className: "space-y-4" },
-                React.createElement('div', null,
-                  React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Photo (optional)"),
-                  React.createElement('button', {
-                    onClick: () => cameraInputRef.current?.click(),
-                    className: "w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center hover:border-blue-400 transition-colors"
-                  },
-                    currentBox.photo ? React.createElement('img', {
-                      src: currentBox.photo,
-                      alt: "Box contents",
-                      className: "w-full h-full object-cover rounded-2xl"
-                    }) : React.createElement(React.Fragment, null,
-                      React.createElement(Camera, { className: "text-gray-400 mb-2 text-2xl" }),
-                      React.createElement('span', { className: "text-sm text-gray-500" }, "Tap to add photo (optional)")
-                    )
-                  ),
-                  React.createElement('input', {
-                    ref: cameraInputRef,
-                    type: "file",
-                    accept: "image/*",
-                    capture: "environment",
-                    onChange: handlePhotoCapture,
-                    className: "hidden"
-                  })
-                ),
-                React.createElement('div', null,
-                  React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Describe contents"),
-                  React.createElement('textarea', {
-                    value: currentBox.contents,
-                    onChange: (e) => setCurrentBox(prev => ({ ...prev, contents: e.target.value })),
-                    placeholder: "Winter clothes, books, kitchen items...",
-                    rows: 3,
-                    className: "w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
-                  })
-                ),
-                React.createElement('div', null,
-                  React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, "Where is this going?"),
-                  React.createElement('div', { className: "grid grid-cols-2 gap-2" },
-                    locations.map(loc => 
-                      React.createElement('button', {
-                        key: loc.value,
-                        onClick: () => setCurrentBox(prev => ({ ...prev, location: loc.value })),
-                        className: `p-3 rounded-2xl border-2 transition-all duration-200 ${
-                          currentBox.location === loc.value ? loc.color : 'border-gray-200 hover:border-gray-300'
-                        }`
-                      },
-                        React.createElement('div', { className: "text-lg mb-1" }, loc.icon),
-                        React.createElement('div', { className: "text-xs font-medium" }, loc.label)
-                      )
-                    )
-                  )
-                ),
-                React.createElement('div', { className: "flex gap-3 pt-4" },
-                  React.createElement('button', {
-                    onClick: editingId ? updateBox : addBox,
-                    className: "flex-1 bg-green-600 text-white py-3 px-6 rounded-2xl hover:bg-green-700 transition-all duration-200 font-medium flex items-center justify-center gap-2"
-                  },
-                    React.createElement(Heart),
-                    editingId ? 'Update Box' : 'Pack Box'
-                  ),
-                  editingId && React.createElement('button', {
-                    onClick: resetForm,
-                    className: "px-6 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-all duration-200"
-                  }, "Cancel")
-                )
-              )
-            ),
-            activeTab === 'boxes' && React.createElement('div', null,
-              React.createElement('div', { className: "mb-4" },
-                React.createElement('div', { className: "relative" },
-                  React.createElement(Search, { className: "absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" }),
-                  React.createElement('input', {
-                    type: "text",
-                    value: searchTerm,
-                    onChange: (e) => setSearchTerm(e.target.value),
-                    placeholder: "Search your boxes...",
-                    className: "w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  })
-                )
-              ),
-              React.createElement('div', { className: "space-y-4" },
-                filteredBoxes.map(box => {
-                  const locationInfo = getLocationInfo(box.location);
-                  return React.createElement('div', {
-                    key: box.id,
-                    className: "bg-white rounded-2xl shadow-lg p-4 border"
-                  },
-                    React.createElement('div', { className: "flex justify-between items-start mb-3" },
-                      React.createElement('div', { className: "flex items-center gap-2" },
-                        React.createElement('span', { className: "text-lg font-bold text-blue-600" }, box.id),
-                        React.createElement('div', { className: `px-2 py-1 rounded-full text-xs ${locationInfo.color} border` },
-                          locationInfo.icon + ' ' + locationInfo.label
-                        )
-                      ),
-                      React.createElement('div', { className: "flex gap-1" },
-                        React.createElement('button', {
-                          onClick: () => printLabel(box),
-                          className: "text-purple-600 hover:text-purple-800 p-1"
-                        }, React.createElement(Printer)),
-                        React.createElement('button', {
-                          onClick: () => editBox(box),
-                          className: "text-blue-600 hover:text-blue-800 p-1"
-                        }, React.createElement(Edit2)),
-                        React.createElement('button', {
-                          onClick: () => deleteBox(box.id),
-                          className: "text-red-600 hover:text-red-800 p-1"
-                        }, React.createElement(Trash2))
-                      )
-                    ),
-                    box.photo && React.createElement('img', {
-                      src: box.photo,
-                      alt: `Box ${box.id}`,
-                      className: "w-full h-32 object-cover rounded-xl mb-3"
-                    }),
-                    React.createElement('p', { className: "text-gray-700 text-sm mb-2" }, box.contents),
-                    box.packedBy && React.createElement('div', { className: "text-xs text-gray-400" },
-                      `Packed by ${box.packedBy}`
-                    )
-                  );
-                })
-              ),
-              filteredBoxes.length === 0 && React.createElement('div', { className: "text-center py-12" },
-                React.createElement('div', { className: "text-4xl mb-4" }, '📦'),
-                React.createElement('p', { className: "text-gray-500" },
-                  searchTerm ? 'No boxes match your search.' : 'No boxes yet. Start packing!'
-                )
-              )
-            ),
-            showShareModal && React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" },
-              React.createElement('div', { className: "bg-white rounded-3xl p-6 max-w-sm w-full" },
-                React.createElement('h3', { className: "text-lg font-semibold mb-4 text-center" }, "Share Session"),
-                React.createElement('p', { className: "text-gray-600 mb-4 text-center text-sm" }, "Share this code with your partner:"),
-                React.createElement('div', { className: "flex items-center gap-2 mb-4" },
-                  React.createElement('div', { className: "flex-1 bg-gray-100 rounded-2xl p-3 text-center" },
-                    React.createElement('span', { className: "text-xl font-bold text-blue-600" }, shareCode)
-                  ),
-                  React.createElement('button', {
-                    onClick: copyShareCode,
-                    className: "flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors text-sm"
-                  },
-                    copied ? React.createElement(Check) : React.createElement(Copy),
-                    copied ? 'Copied!' : 'Copy'
-                  )
-                ),
-                React.createElement('div', { className: "space-y-3" },
-                  React.createElement('div', null,
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Join existing session:"),
-                    React.createElement('div', { className: "flex gap-2" },
-                      React.createElement('input', {
-                        type: "text",
-                        placeholder: "Enter code",
-                        className: "flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm",
-                        onKeyPress: (e) => e.key === 'Enter' && joinSession(e.target.value)
-                      }),
-                      React.createElement('button', {
-                        onClick: (e) => {
-                          const input = e.target.previousElementSibling;
-                          joinSession(input.value);
-                        },
-                        className: "px-4 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
-                      }, "Join")
-                    )
-                  )
-                ),
-                React.createElement('button', {
-                  onClick: () => setShowShareModal(false),
-                  className: "w-full mt-4 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-colors"
-                }, "Close")
-              )
-            ),
-            showSettingsModal && React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" },
-              React.createElement('div', { className: "bg-white rounded-3xl p-6 max-w-sm w-full max-h-[80vh] overflow-y-auto" },
-                React.createElement('h3', { className: "text-lg font-semibold mb-4 text-center" }, "Settings"),
-                React.createElement('div', { className: "space-y-4" },
-                  React.createElement('div', null,
-                    React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, "Who are you?"),
-                    React.createElement('select', {
-                      value: settings.userName,
-                      onChange: (e) => setSettings(prev => ({ ...prev, userName: e.target.value })),
-                      className: "w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    },
-                      React.createElement('option', { value: "LC" }, "LC"),
-                      React.createElement('option', { value: "JY" }, "JY")
-                    )
-                  ),
-                  React.createElement('div', { className: "border-t pt-4" },
-                    React.createElement('h4', { className: "font-medium text-gray-800 mb-2" }, "Label Printer"),
-                    React.createElement('label', { className: "flex items-center gap-2 mb-2" },
-                      React.createElement('input', {
-                        type: "checkbox",
-                        checked: settings.printerConnected,
-                        onChange: (e) => setSettings(prev => ({ ...prev, printerConnected: e.target.checked })),
-                        className: "w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      }),
-                      React.createElement('span', { className: "text-sm" }, "Printer connected")
-                    )
-                  ),
-                  React.createElement('div', { className: "border-t pt-4" },
-                    React.createElement('h4', { className: "font-medium text-gray-800 mb-2" }, "Google Sheets"),
-                    React.createElement('div', { className: "bg-green-50 border border-green-200 rounded-2xl p-3 mb-3" },
-                      React.createElement('div', { className: "flex items-center gap-2 text-green-700 text-sm" },
-                        React.createElement('span', null, '✅'),
-                        React.createElement('span', null, 'Connected to your Google Sheet')
-                      ),
-                      React.createElement('div', { className: "text-xs text-green-600 mt-1" },
-                        `Auto-syncing to: ...${settings.spreadsheetId.slice(-10)}`
-                      )
-                    ),
-                    React.createElement('label', { className: "flex items-center gap-2 mb-2" },
-                      React.createElement('input', {
-                        type: "checkbox",
-                        checked: settings.autoGoogleSync,
-                        onChange: (e) => setSettings(prev => ({ ...prev, autoGoogleSync: e.target.checked })),
-                        className: "w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      }),
-                      React.createElement('span', { className: "text-sm" }, "Auto-sync every box to Google Sheets")
-                    ),
-                    React.createElement('button', {
-                      onClick: exportToGoogleSheets,
-                      className: "w-full mt-2 px-3 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors text-sm"
-                    }, "📊 Export CSV for Google Sheets"),
-                    React.createElement('button', {
-                      onClick: async () => {
-                        // Test API key and permissions
-                        try {
-                          const testUrl = `https://sheets.googleapis.com/v4/spreadsheets/${settings.spreadsheetId}?key=${settings.apiKey}`;
-                          const response = await fetch(testUrl);
-                          if (response.ok) {
-                            const data = await response.json();
-                            alert(`✅ Connection Test Successful!\nSheet Title: ${data.properties.title}\nAPI Key: Working`);
-                          } else {
-                            const error = await response.text();
-                            alert(`❌ Connection Test Failed:\n${response.status} - ${error}`);
-                          }
-                        } catch (error) {
-                          alert(`❌ Connection Test Error:\n${error.message}`);
-                        }
-                      },
-                      className: "w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors text-sm"
-                    }, "🔧 Test Google Sheets Connection")
-                  ),
-                  React.createElement('div', { className: "border-t pt-4" },
-                    React.createElement('label', { className: "flex items-center gap-2" },
-                      React.createElement('input', {
-                        type: "checkbox",
-                        checked: settings.autoSync,
-                        onChange: (e) => setSettings(prev => ({ ...prev, autoSync: e.target.checked })),
-                        className: "w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      }),
-                      React.createElement('span', { className: "text-sm" }, "Auto-sync with partner")
-                    )
-                  ),
-                  React.createElement('div', { className: "border-t pt-4" },
-                    React.createElement('div', { className: "flex gap-2 text-sm" },
-                      React.createElement('button', {
-                        onClick: exportData,
-                        className: "flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200"
-                      },
-                        React.createElement(Download),
-                        'Export'
-                      ),
-                      React.createElement('label', { className: "flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-2xl hover:bg-gray-700 transition-all duration-200 cursor-pointer" },
-                        React.createElement(Upload),
-                        'Import',
-                        React.createElement('input', {
-                          type: "file",
-                          accept: ".json",
-                          onChange: importData,
-                          className: "hidden"
-                        })
-                      ),
-                      React.createElement('button', {
-                        onClick: () => {
-                          const dataStr = JSON.stringify({ boxes, settings, backupDate: new Date().toISOString() }, null, 2);
-                          const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                          const url = URL.createObjectURL(dataBlob);
-                          const link = document.createElement('a');
-                          link.href = url;
-                          link.download = `konmari-manual-backup-${new Date().toISOString().split('T')[0]}.json`;
-                          link.click();
-                          alert('✅ Manual backup downloaded!');
-                        },
-                        className: "flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200",
-                        title: "Download Backup"
-                      }, '💾')
-                    )
-                  )
-                ),
-                React.createElement('div', { className: "flex gap-2 mt-6" },
-                  React.createElement('button', {
-                    onClick: saveSettings,
-                    className: "flex-1 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-colors"
-                  }, "Save"),
-                  React.createElement('button', {
-                    onClick: () => setShowSettingsModal(false),
-                    className: "px-6 py-3 bg-gray-200 text-gray-700 rounded-2xl hover:bg-gray-300 transition-colors"
-                  }, "Cancel")
-                )
-              )
-            )
-          ));
+        /* Watercolor effect */
+        .watercolor-blob {
+            filter: url(#watercolor);
+            opacity: 0.85;
+        }
+        .watercolor-card {
+            background: linear-gradient(135deg, rgba(255,228,225,0.4), rgba(255,240,230,0.3), rgba(230,240,255,0.3));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,200,180,0.3);
+        }
+        .watercolor-bg {
+            background: linear-gradient(180deg, #FFF9F5 0%, #FFF0EA 30%, #F8F0FF 60%, #FFF9F5 100%);
         }
 
+        /* Soft scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E8C4B8; border-radius: 3px; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes pulse-soft { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        .animate-pulse-soft { animation: pulse-soft 3s ease-in-out infinite; }
+
+        .tab-active {
+            background: linear-gradient(135deg, #F9A8D4, #C4B5FD);
+            color: white;
+            box-shadow: 0 4px 15px rgba(249,168,212,0.3);
+        }
+
+        .progress-ring { transition: stroke-dashoffset 0.8s ease-in-out; }
+
+        .recipe-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+        .recipe-card { transition: all 0.3s ease; }
+
+        .workout-card:hover { transform: scale(1.02); }
+        .workout-card { transition: all 0.3s ease; }
+
+        .checkbox-custom {
+            appearance: none;
+            width: 20px; height: 20px;
+            border: 2px solid #E8C4B8;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .checkbox-custom:checked {
+            background: linear-gradient(135deg, #F9A8D4, #C4B5FD);
+            border-color: transparent;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bloom: { 50: '#FFF9F5', 100: '#FFF0EA', 200: '#FFE0D0', 300: '#F9A8D4', 400: '#C4B5FD', 500: '#A78BFA', 600: '#7C3AED', rose: '#F9A8D4', lavender: '#C4B5FD', peach: '#FBBF8E', sage: '#A7C4A0', sky: '#93C5FD' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="watercolor-bg min-h-screen">
+    <!-- SVG Filters for watercolor effect -->
+    <svg style="position:absolute;width:0;height:0">
+        <defs>
+            <filter id="watercolor">
+                <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="turbulence"/>
+                <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+        // ─── DATA ───────────────────────────────────────────────────────
+        const WEEK_DATA = [
+            { week: 1, fruit: "Poppy Seed", size: "0.1 cm", fruitEmoji: "🫘", trimester: 1, dev: "Fertilization occurs. The journey begins!", color: "#FFE4E1" },
+            { week: 2, fruit: "Poppy Seed", size: "0.1 cm", fruitEmoji: "🫘", trimester: 1, dev: "The fertilized egg implants in the uterine wall.", color: "#FFE4E1" },
+            { week: 3, fruit: "Poppy Seed", size: "0.2 cm", fruitEmoji: "🫘", trimester: 1, dev: "The blastocyst is implanting. Cells are dividing rapidly.", color: "#FFE4E1" },
+            { week: 4, fruit: "Poppy Seed", size: "0.4 cm", fruitEmoji: "🫘", trimester: 1, dev: "The neural tube is forming. The heart begins to beat!", color: "#FFDAB9" },
+            { week: 5, fruit: "Sesame Seed", size: "0.5 cm", fruitEmoji: "🌾", trimester: 1, dev: "Tiny buds that will become arms and legs appear.", color: "#FFDAB9" },
+            { week: 6, fruit: "Lentil", size: "0.6 cm", fruitEmoji: "🟤", trimester: 1, dev: "The nose, mouth, and ears are starting to take shape.", color: "#FFDAB9" },
+            { week: 7, fruit: "Blueberry", size: "1.3 cm", fruitEmoji: "🫐", trimester: 1, dev: "Baby is generating about 100 new brain cells every minute!", color: "#E6E0FF" },
+            { week: 8, fruit: "Raspberry", size: "1.6 cm", fruitEmoji: "🍇", trimester: 1, dev: "Fingers and toes are forming. Baby starts moving!", color: "#FFD0E0" },
+            { week: 9, fruit: "Cherry", size: "2.3 cm", fruitEmoji: "🍒", trimester: 1, dev: "All essential organs have begun to form.", color: "#FFB6C1" },
+            { week: 10, fruit: "Strawberry", size: "3.1 cm", fruitEmoji: "🍓", trimester: 1, dev: "Bones are beginning to harden. Baby can swallow!", color: "#FF9999" },
+            { week: 11, fruit: "Lime", size: "4.1 cm", fruitEmoji: "🟢", trimester: 1, dev: "Baby is almost fully formed with tiny tooth buds.", color: "#C1FFC1" },
+            { week: 12, fruit: "Plum", size: "5.4 cm", fruitEmoji: "🟣", trimester: 1, dev: "Reflexes are developing. Baby can open and close fists!", color: "#DDA0DD" },
+            { week: 13, fruit: "Peach", size: "7.4 cm", fruitEmoji: "🍑", trimester: 2, dev: "Fingerprints have formed! Vocal cords are developing.", color: "#FFDAB9" },
+            { week: 14, fruit: "Lemon", size: "8.7 cm", fruitEmoji: "🍋", trimester: 2, dev: "Baby can squint, frown, and make facial expressions.", color: "#FFFACD" },
+            { week: 15, fruit: "Apple", size: "10.1 cm", fruitEmoji: "🍎", trimester: 2, dev: "Baby can sense light and is forming taste buds.", color: "#FFB3B3" },
+            { week: 16, fruit: "Avocado", size: "11.6 cm", fruitEmoji: "🥑", trimester: 2, dev: "Baby's circulatory system is now fully functional!", color: "#C8E6C9" },
+            { week: 17, fruit: "Pear", size: "13 cm", fruitEmoji: "🍐", trimester: 2, dev: "Baby's skeleton is changing from cartilage to bone.", color: "#E8F5E9" },
+            { week: 18, fruit: "Bell Pepper", size: "14.2 cm", fruitEmoji: "🫑", trimester: 2, dev: "Baby can hear sounds! Time to start talking to them.", color: "#FFF9C4" },
+            { week: 19, fruit: "Mango", size: "15.3 cm", fruitEmoji: "🥭", trimester: 2, dev: "A protective coating called vernix covers the skin.", color: "#FFE0B2" },
+            { week: 20, fruit: "Banana", size: "16.4 cm", fruitEmoji: "🍌", trimester: 2, dev: "Halfway there! Baby is swallowing more and producing meconium.", color: "#FFF9C4" },
+            { week: 21, fruit: "Carrot", size: "26.7 cm", fruitEmoji: "🥕", trimester: 2, dev: "Baby's movements are more coordinated now.", color: "#FFE0B2" },
+            { week: 22, fruit: "Papaya", size: "27.8 cm", fruitEmoji: "🧡", trimester: 2, dev: "Baby looks like a miniature newborn. Eyes are formed!", color: "#FFCCBC" },
+            { week: 23, fruit: "Grapefruit", size: "28.9 cm", fruitEmoji: "🍊", trimester: 2, dev: "Baby can hear your voice and music from outside!", color: "#FFE0B2" },
+            { week: 24, fruit: "Cantaloupe", size: "30 cm", fruitEmoji: "🍈", trimester: 2, dev: "Baby's face is almost fully formed. So beautiful!", color: "#FFE4CC" },
+            { week: 25, fruit: "Cauliflower", size: "34.6 cm", fruitEmoji: "🤍", trimester: 2, dev: "Baby is gaining baby fat and starting to fill out.", color: "#FFF8E1" },
+            { week: 26, fruit: "Lettuce", size: "35.6 cm", fruitEmoji: "🥬", trimester: 2, dev: "Baby's eyes are opening! They can see light and dark.", color: "#E8F5E9" },
+            { week: 27, fruit: "Cauliflower", size: "36.6 cm", fruitEmoji: "🤍", trimester: 3, dev: "Baby can now open and close their eyes and suck their thumb.", color: "#F3E5F5" },
+            { week: 28, fruit: "Eggplant", size: "37.6 cm", fruitEmoji: "🍆", trimester: 3, dev: "Baby's brain is developing billions of neurons!", color: "#E1BEE7" },
+            { week: 29, fruit: "Butternut Squash", size: "38.6 cm", fruitEmoji: "🎃", trimester: 3, dev: "Baby's muscles and lungs are continuing to mature.", color: "#FFE0B2" },
+            { week: 30, fruit: "Coconut", size: "39.9 cm", fruitEmoji: "🥥", trimester: 3, dev: "Baby's brain is growing rapidly with new connections.", color: "#EFEBE9" },
+            { week: 31, fruit: "Pineapple", size: "41.1 cm", fruitEmoji: "🍍", trimester: 3, dev: "Baby can turn their head from side to side.", color: "#FFF9C4" },
+            { week: 32, fruit: "Squash", size: "42.4 cm", fruitEmoji: "🟡", trimester: 3, dev: "Baby is practicing breathing movements.", color: "#FFF3E0" },
+            { week: 33, fruit: "Celery", size: "43.7 cm", fruitEmoji: "🥒", trimester: 3, dev: "Baby's bones are hardening, but skull stays soft for delivery.", color: "#E8F5E9" },
+            { week: 34, fruit: "Pineapple", size: "45 cm", fruitEmoji: "🍍", trimester: 3, dev: "Baby's central nervous system is maturing.", color: "#FFF9C4" },
+            { week: 35, fruit: "Honeydew Melon", size: "46.2 cm", fruitEmoji: "🍈", trimester: 3, dev: "Baby's kidneys are fully developed. Almost ready!", color: "#E0F7FA" },
+            { week: 36, fruit: "Romaine Lettuce", size: "47.4 cm", fruitEmoji: "🥬", trimester: 3, dev: "Baby is shedding their downy hair and waxy coating.", color: "#E8F5E9" },
+            { week: 37, fruit: "Swiss Chard", size: "48.6 cm", fruitEmoji: "🥬", trimester: 3, dev: "Baby is considered early term! Practicing for the big day.", color: "#C8E6C9" },
+            { week: 38, fruit: "Leek", size: "49.8 cm", fruitEmoji: "🟢", trimester: 3, dev: "Baby's brain and lungs continue maturing.", color: "#E0F2F1" },
+            { week: 39, fruit: "Watermelon", size: "50.7 cm", fruitEmoji: "🍉", trimester: 3, dev: "Full term! Baby is ready to meet you anytime now!", color: "#FFCDD2" },
+            { week: 40, fruit: "Pumpkin", size: "51.2 cm", fruitEmoji: "🎃", trimester: 3, dev: "Due date! Your baby is the size of a small pumpkin. Welcome, little one!", color: "#FFE0B2" }
+        ];
+
+        const DOCTOR_CHECKPOINTS = [
+            { week: 8, title: "First Prenatal Visit", desc: "Confirm pregnancy, blood tests, health history, due date calculation", icon: "🩺", tests: ["Blood type & Rh factor", "Complete blood count", "Urinalysis", "STI screening", "Pap smear if due"] },
+            { week: 10, title: "Optional: NIPT Screening", desc: "Non-invasive prenatal testing for chromosomal conditions", icon: "🧬", tests: ["NIPT blood draw", "Screens for Down syndrome, Trisomy 18 & 13", "Can reveal baby's sex"] },
+            { week: 12, title: "First Trimester Screening", desc: "Nuchal translucency ultrasound and blood work", icon: "📷", tests: ["NT ultrasound", "Blood screening", "First glimpse of baby!"] },
+            { week: 16, title: "Second Trimester Visit", desc: "Check growth and listen to heartbeat", icon: "💓", tests: ["Fundal height measurement", "Fetal heartbeat check", "Quad screen blood test", "AFP screening"] },
+            { week: 20, title: "Anatomy Scan", desc: "Detailed ultrasound to check baby's development", icon: "🖼️", tests: ["Full anatomy survey", "Organ development check", "Placenta position", "Gender reveal possible!", "Amniotic fluid levels"] },
+            { week: 24, title: "Glucose Screening", desc: "Test for gestational diabetes", icon: "🍬", tests: ["Glucose challenge test (1-hour)", "Blood pressure check", "Weight check", "Urine protein check"] },
+            { week: 28, title: "Third Trimester Begins", desc: "Rh factor test, begin biweekly visits", icon: "💉", tests: ["Rh antibody screen", "RhoGAM injection if Rh-negative", "Tdap vaccine recommended", "Kick count education"] },
+            { week: 32, title: "Growth Check", desc: "Monitor baby's growth and position", icon: "📏", tests: ["Growth ultrasound", "Baby position check", "Blood pressure monitoring", "Swelling assessment"] },
+            { week: 36, title: "Weekly Visits Begin", desc: "Group B Strep test, cervical checks may begin", icon: "🔬", tests: ["Group B Strep swab", "Cervical check (optional)", "Baby position confirmation", "Birth plan discussion"] },
+            { week: 38, title: "Pre-Birth Check", desc: "Final preparations and monitoring", icon: "📋", tests: ["Non-stress test", "Amniotic fluid check", "Cervical progress", "Labor signs education"] },
+            { week: 40, title: "Due Date Visit", desc: "Evaluate if induction needed", icon: "🎉", tests: ["Non-stress test", "Biophysical profile", "Induction discussion if needed", "You're almost there!"] }
+        ];
+
+        const NUTRITION_TIPS = {
+            1: [
+                { title: "Start Your Prenatal Vitamins", tip: "Begin folic acid (400-800mcg daily) to support neural tube development.", recipe: { name: "Green Power Smoothie", ingredients: ["1 cup spinach", "1 banana", "1/2 cup blueberries", "1 tbsp chia seeds", "1 cup almond milk"], instructions: "Blend all ingredients until smooth. Rich in folate and iron!" } },
+                { title: "Hydration is Key", tip: "Aim for 8-10 glasses of water daily to support your growing blood volume.", recipe: { name: "Infused Water Trio", ingredients: ["Cucumber + mint", "Lemon + ginger", "Strawberry + basil", "1L water per combo"], instructions: "Add sliced fruits/herbs to water. Refrigerate 2 hours for best flavor." } },
+                { title: "Iron-Rich Foods", tip: "Iron supports increased blood production. Pair with vitamin C for better absorption.", recipe: { name: "Lentil & Spinach Soup", ingredients: ["1 cup red lentils", "2 cups spinach", "1 carrot, diced", "1 can diced tomatoes", "4 cups broth", "Cumin & turmeric"], instructions: "Sauté carrot in olive oil, add spices, lentils, tomatoes, and broth. Simmer 20 min. Stir in spinach." } },
+                { title: "Omega-3 Fatty Acids", tip: "DHA supports baby's brain development. Aim for 2-3 servings of low-mercury fish per week.", recipe: { name: "Baked Salmon with Sweet Potato", ingredients: ["2 salmon fillets", "2 sweet potatoes", "Olive oil, lemon, dill", "Roasted asparagus"], instructions: "Bake salmon at 400°F for 12-15 min with lemon and dill. Serve with roasted sweet potato wedges." } },
+                { title: "Calcium Matters", tip: "Build baby's bones with 1000mg calcium daily from food sources.", recipe: { name: "Greek Yogurt Parfait", ingredients: ["1 cup Greek yogurt", "1/4 cup granola", "Mixed berries", "Drizzle of honey", "1 tbsp almonds"], instructions: "Layer yogurt, berries, and granola in a glass. Top with honey and almonds." } },
+                { title: "Whole Grains Energy", tip: "Complex carbs provide steady energy and essential B vitamins.", recipe: { name: "Quinoa Buddha Bowl", ingredients: ["1 cup cooked quinoa", "Roasted chickpeas", "Avocado", "Sweet potato", "Tahini dressing"], instructions: "Arrange all ingredients over quinoa. Drizzle with tahini mixed with lemon juice." } },
+                { title: "Vitamin C Boost", tip: "Vitamin C helps with iron absorption and immune function.", recipe: { name: "Citrus & Kale Salad", ingredients: ["2 cups kale, massaged", "1 orange, segmented", "1/4 cup pomegranate seeds", "Feta cheese", "Citrus vinaigrette"], instructions: "Massage kale with olive oil. Top with orange, pomegranate, feta, and dressing." } }
+            ]
+        };
+
+        // Generate nutrition tips for all weeks based on trimester
+        function getNutritionForDay(week, dayOfWeek) {
+            const tips = NUTRITION_TIPS[1];
+            return tips[dayOfWeek % tips.length];
+        }
+
+        const TRIMESTER_NUTRITION_FOCUS = {
+            1: { focus: "Folate, Iron & Ginger for nausea", nutrients: ["Folic Acid", "Iron", "Vitamin B6", "Ginger"], avoid: ["Raw fish", "Unpasteurized cheese", "Excess caffeine", "Deli meats"] },
+            2: { focus: "Calcium, Protein & Omega-3s for growth", nutrients: ["Calcium", "Protein", "Omega-3 DHA", "Vitamin D"], avoid: ["High-mercury fish", "Raw sprouts", "Excess sugar", "Alcohol"] },
+            3: { focus: "Fiber, Magnesium & Vitamin K for delivery prep", nutrients: ["Fiber", "Magnesium", "Vitamin K", "Choline"], avoid: ["Excess sodium", "Large meals before bed", "Spicy foods if heartburn", "Raw eggs"] }
+        };
+
+        const WORKOUT_PLANS = {
+            1: {
+                name: "First Trimester Fitness",
+                note: "Listen to your body. It's okay to rest! Aim for moderate intensity.",
+                days: [
+                    { day: "Monday", title: "Gentle Cardio", duration: "25 min", exercises: [
+                        { name: "Brisk Walking", duration: "15 min", reps: null, note: "Keep a conversational pace" },
+                        { name: "Arm Circles", duration: "2 min", reps: null, note: "Forward and backward" },
+                        { name: "Standing March", duration: "5 min", reps: null, note: "Lift knees gently" },
+                        { name: "Cool Down Stretch", duration: "3 min", reps: null, note: "Full body stretching" }
+                    ]},
+                    { day: "Tuesday", title: "Strength & Tone", duration: "20 min", exercises: [
+                        { name: "Wall Push-ups", duration: null, reps: "3 × 10", note: "Keep core engaged" },
+                        { name: "Bodyweight Squats", duration: null, reps: "3 × 12", note: "Feet shoulder-width apart" },
+                        { name: "Bicep Curls", duration: null, reps: "3 × 10", note: "Light weights (3-5 lbs)" },
+                        { name: "Pelvic Tilts", duration: null, reps: "3 × 15", note: "Lying on back" },
+                        { name: "Bird Dogs", duration: null, reps: "3 × 8 each side", note: "Core stability" }
+                    ]},
+                    { day: "Wednesday", title: "Prenatal Yoga", duration: "30 min", exercises: [
+                        { name: "Cat-Cow Stretches", duration: "3 min", reps: null, note: "Warm up the spine" },
+                        { name: "Warrior II Pose", duration: "2 min each side", reps: null, note: "Build leg strength" },
+                        { name: "Triangle Pose", duration: "1 min each side", reps: null, note: "Side body stretch" },
+                        { name: "Seated Forward Fold", duration: "2 min", reps: null, note: "Gentle hamstring stretch" },
+                        { name: "Savasana", duration: "5 min", reps: null, note: "Deep relaxation" }
+                    ]},
+                    { day: "Thursday", title: "Low-Impact Cardio", duration: "25 min", exercises: [
+                        { name: "Swimming or Water Walking", duration: "20 min", reps: null, note: "Great for joints!" },
+                        { name: "Gentle Stretching", duration: "5 min", reps: null, note: "Focus on hips and back" }
+                    ]},
+                    { day: "Friday", title: "Full Body Strength", duration: "25 min", exercises: [
+                        { name: "Lateral Lunges", duration: null, reps: "3 × 10 each", note: "Step wide, keep chest up" },
+                        { name: "Shoulder Press", duration: null, reps: "3 × 10", note: "Light weights" },
+                        { name: "Glute Bridges", duration: null, reps: "3 × 15", note: "Squeeze at the top" },
+                        { name: "Seated Rows", duration: null, reps: "3 × 12", note: "Resistance band" },
+                        { name: "Kegels", duration: "5 min", reps: null, note: "Hold 5 sec, release 5 sec" }
+                    ]},
+                    { day: "Saturday", title: "Active Recovery", duration: "20 min", exercises: [
+                        { name: "Leisurely Walk", duration: "15 min", reps: null, note: "Enjoy nature 🌿" },
+                        { name: "Gentle Stretching", duration: "5 min", reps: null, note: "Focus on what feels tight" }
+                    ]},
+                    { day: "Sunday", title: "Rest Day", duration: "Self-care", exercises: [
+                        { name: "Meditation", duration: "10 min", reps: null, note: "Connect with baby 💕" },
+                        { name: "Prenatal Breathing", duration: "5 min", reps: null, note: "Deep belly breaths" },
+                        { name: "Gentle Walk (Optional)", duration: "10 min", reps: null, note: "Only if you feel up to it" }
+                    ]}
+                ]
+            },
+            2: {
+                name: "Second Trimester Fitness",
+                note: "Your energy is back! This is the golden trimester for staying active.",
+                days: [
+                    { day: "Monday", title: "Cardio & Core", duration: "30 min", exercises: [
+                        { name: "Brisk Walking / Elliptical", duration: "20 min", reps: null, note: "Moderate intensity" },
+                        { name: "Side Planks (Modified)", duration: null, reps: "3 × 20 sec each", note: "Knees down for support" },
+                        { name: "Standing Oblique Crunches", duration: null, reps: "3 × 12 each", note: "Elbow to knee" },
+                        { name: "Pelvic Floor Exercises", duration: "5 min", reps: null, note: "Kegels and deep breathing" }
+                    ]},
+                    { day: "Tuesday", title: "Upper Body Strength", duration: "25 min", exercises: [
+                        { name: "Incline Push-ups", duration: null, reps: "3 × 10", note: "Use a bench or wall" },
+                        { name: "Lateral Raises", duration: null, reps: "3 × 12", note: "Light dumbbells" },
+                        { name: "Tricep Dips (Chair)", duration: null, reps: "3 × 10", note: "Modify as needed" },
+                        { name: "Resistance Band Pulls", duration: null, reps: "3 × 12", note: "Seated or standing" },
+                        { name: "Wrist & Forearm Stretches", duration: "3 min", reps: null, note: "Prevent carpal tunnel" }
+                    ]},
+                    { day: "Wednesday", title: "Prenatal Yoga Flow", duration: "35 min", exercises: [
+                        { name: "Sun Salutation (Modified)", duration: "10 min", reps: null, note: "Skip deep twists" },
+                        { name: "Goddess Pose", duration: "2 min", reps: null, note: "Open hips wide" },
+                        { name: "Pigeon Pose", duration: "2 min each side", reps: null, note: "Hip opener" },
+                        { name: "Supported Bridge", duration: "3 min", reps: null, note: "Use a block" },
+                        { name: "Side-Lying Savasana", duration: "5 min", reps: null, note: "Left side preferred" }
+                    ]},
+                    { day: "Thursday", title: "Lower Body Power", duration: "30 min", exercises: [
+                        { name: "Sumo Squats", duration: null, reps: "3 × 12", note: "Wide stance, toes out" },
+                        { name: "Step-Ups", duration: null, reps: "3 × 10 each", note: "Use a low step" },
+                        { name: "Calf Raises", duration: null, reps: "3 × 15", note: "Hold a wall for balance" },
+                        { name: "Side-Lying Leg Lifts", duration: null, reps: "3 × 12 each", note: "Inner and outer thigh" },
+                        { name: "Hip Circles", duration: "3 min", reps: null, note: "On hands and knees" }
+                    ]},
+                    { day: "Friday", title: "Swim & Stretch", duration: "30 min", exercises: [
+                        { name: "Swimming Laps", duration: "20 min", reps: null, note: "Freestyle or backstroke" },
+                        { name: "Water Squats", duration: null, reps: "3 × 15", note: "In the pool" },
+                        { name: "Pool Stretching", duration: "10 min", reps: null, note: "Weightless stretching!" }
+                    ]},
+                    { day: "Saturday", title: "Active Fun", duration: "30 min", exercises: [
+                        { name: "Prenatal Dance Class", duration: "20 min", reps: null, note: "Or dance at home! 💃" },
+                        { name: "Stretching", duration: "10 min", reps: null, note: "Full body cool down" }
+                    ]},
+                    { day: "Sunday", title: "Mindful Rest", duration: "Self-care", exercises: [
+                        { name: "Prenatal Meditation", duration: "15 min", reps: null, note: "Visualize meeting baby" },
+                        { name: "Gentle Walk", duration: "15 min", reps: null, note: "Fresh air and sunshine" },
+                        { name: "Journaling", duration: "10 min", reps: null, note: "Write a letter to baby 💌" }
+                    ]}
+                ]
+            },
+            3: {
+                name: "Third Trimester Fitness",
+                note: "Focus on comfort, flexibility, and birth preparation. Modify as your belly grows!",
+                days: [
+                    { day: "Monday", title: "Gentle Cardio", duration: "20 min", exercises: [
+                        { name: "Walking", duration: "15 min", reps: null, note: "Slow and steady" },
+                        { name: "Seated Arm Exercises", duration: "5 min", reps: null, note: "Light weights or bands" }
+                    ]},
+                    { day: "Tuesday", title: "Birth Prep Strength", duration: "25 min", exercises: [
+                        { name: "Deep Squats (Supported)", duration: null, reps: "3 × 10", note: "Hold onto chair" },
+                        { name: "Pelvic Floor Exercises", duration: "5 min", reps: null, note: "Kegels + relaxation" },
+                        { name: "Cat-Cow", duration: "3 min", reps: null, note: "Relieve back pressure" },
+                        { name: "Wall Sit", duration: null, reps: "3 × 20 sec", note: "Build leg endurance" },
+                        { name: "Perineal Massage Education", duration: "5 min", reps: null, note: "Start at 34 weeks" }
+                    ]},
+                    { day: "Wednesday", title: "Gentle Yoga", duration: "25 min", exercises: [
+                        { name: "Child's Pose (Wide Knees)", duration: "3 min", reps: null, note: "Make room for belly" },
+                        { name: "Butterfly Stretch", duration: "3 min", reps: null, note: "Open the hips" },
+                        { name: "Supported Side Angle", duration: "2 min each", reps: null, note: "Use blocks" },
+                        { name: "Legs Up the Wall", duration: "5 min", reps: null, note: "Reduce swelling" },
+                        { name: "Labor Breathing Practice", duration: "5 min", reps: null, note: "Slow, deep breaths" }
+                    ]},
+                    { day: "Thursday", title: "Light Movement", duration: "20 min", exercises: [
+                        { name: "Stationary Bike", duration: "15 min", reps: null, note: "Low resistance" },
+                        { name: "Gentle Stretching", duration: "5 min", reps: null, note: "Focus on lower back" }
+                    ]},
+                    { day: "Friday", title: "Ball Exercises", duration: "25 min", exercises: [
+                        { name: "Ball Bouncing", duration: "5 min", reps: null, note: "Birthing ball" },
+                        { name: "Ball Hip Circles", duration: "5 min", reps: null, note: "Both directions" },
+                        { name: "Ball Lean & Stretch", duration: "5 min", reps: null, note: "Drape over ball" },
+                        { name: "Rocking on All Fours", duration: "5 min", reps: null, note: "Optimal baby positioning" },
+                        { name: "Ball Supported Squats", duration: null, reps: "3 × 10", note: "Ball against wall" }
+                    ]},
+                    { day: "Saturday", title: "Water Therapy", duration: "25 min", exercises: [
+                        { name: "Pool Walking", duration: "15 min", reps: null, note: "Weightless relief!" },
+                        { name: "Water Stretches", duration: "10 min", reps: null, note: "Enjoy the buoyancy" }
+                    ]},
+                    { day: "Sunday", title: "Rest & Bond", duration: "Self-care", exercises: [
+                        { name: "Meditation & Visualization", duration: "15 min", reps: null, note: "Visualize labor & birth" },
+                        { name: "Partner Massage", duration: "15 min", reps: null, note: "Lower back & feet 🧡" },
+                        { name: "Nesting Activities", duration: "As desired", reps: null, note: "Prepare baby's space" }
+                    ]}
+                ]
+            }
+        };
+
+        // ─── WATERCOLOR FRUIT SVG COMPONENT ──────────────────────────
+        function WatercolorFruit({ fruit, size, color, fruitEmoji }) {
+            const sizeNum = parseFloat(size);
+            const displaySize = Math.min(40 + sizeNum * 2.5, 160);
+
+            return (
+                <div className="relative flex items-center justify-center" style={{ width: displaySize + 40, height: displaySize + 40 }}>
+                    <svg width={displaySize + 40} height={displaySize + 40} viewBox="0 0 200 200">
+                        <defs>
+                            <filter id={`wc-${fruit.replace(/\s/g,'')}`}>
+                                <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="5" result="turbulence" seed={fruit.length * 7}/>
+                                <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+                            </filter>
+                            <radialGradient id={`grad-${fruit.replace(/\s/g,'')}`} cx="40%" cy="40%">
+                                <stop offset="0%" stopColor={color} stopOpacity="0.9"/>
+                                <stop offset="60%" stopColor={color} stopOpacity="0.5"/>
+                                <stop offset="100%" stopColor={color} stopOpacity="0.15"/>
+                            </radialGradient>
+                        </defs>
+                        <circle cx="100" cy="100" r="80" fill={`url(#grad-${fruit.replace(/\s/g,'')})`} filter={`url(#wc-${fruit.replace(/\s/g,'')})`} />
+                        <circle cx="100" cy="100" r="60" fill={color} opacity="0.2" filter={`url(#wc-${fruit.replace(/\s/g,'')})`} />
+                    </svg>
+                    <span className="absolute text-center animate-float" style={{ fontSize: Math.min(displaySize * 0.5, 70) }}>
+                        {fruitEmoji}
+                    </span>
+                </div>
+            );
+        }
+
+        // ─── TRIMESTER BADGE ─────────────────────────────────────────
+        function TrimesterBadge({ trimester }) {
+            const colors = {
+                1: "from-pink-300 to-rose-400",
+                2: "from-amber-300 to-orange-400",
+                3: "from-purple-300 to-indigo-400"
+            };
+            const labels = { 1: "First Trimester", 2: "Second Trimester", 3: "Third Trimester" };
+            return (
+                <span className={`inline-block px-3 py-1 rounded-full text-white text-xs font-medium bg-gradient-to-r ${colors[trimester]}`}>
+                    {labels[trimester]}
+                </span>
+            );
+        }
+
+        // ─── PROGRESS RING ──────────────────────────────────────────
+        function ProgressRing({ week, totalWeeks = 40 }) {
+            const radius = 54;
+            const circumference = 2 * Math.PI * radius;
+            const progress = (week / totalWeeks) * circumference;
+            const percentage = Math.round((week / totalWeeks) * 100);
+
+            return (
+                <div className="relative inline-flex items-center justify-center">
+                    <svg width="130" height="130" viewBox="0 0 130 130">
+                        <circle cx="65" cy="65" r={radius} fill="none" stroke="#F3E8FF" strokeWidth="8"/>
+                        <circle cx="65" cy="65" r={radius} fill="none" stroke="url(#ring-gradient)" strokeWidth="8"
+                            strokeDasharray={circumference} strokeDashoffset={circumference - progress}
+                            strokeLinecap="round" transform="rotate(-90 65 65)" className="progress-ring"/>
+                        <defs>
+                            <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#F9A8D4"/>
+                                <stop offset="100%" stopColor="#C4B5FD"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div className="absolute text-center">
+                        <div className="text-2xl font-bold font-display bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">{percentage}%</div>
+                        <div className="text-[10px] text-gray-400">complete</div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── MAIN APP ───────────────────────────────────────────────
+        function App() {
+            const [currentWeek, setCurrentWeek] = useState(() => {
+                const saved = localStorage.getItem('bloom-current-week');
+                return saved ? parseInt(saved) : 8;
+            });
+            const [activeTab, setActiveTab] = useState('overview');
+            const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+            const [completedWorkouts, setCompletedWorkouts] = useState(() => {
+                const saved = localStorage.getItem('bloom-completed-workouts');
+                return saved ? JSON.parse(saved) : {};
+            });
+            const [dueDateInput, setDueDateInput] = useState(() => localStorage.getItem('bloom-due-date') || '');
+            const [showSettings, setShowSettings] = useState(false);
+            const [expandedRecipe, setExpandedRecipe] = useState(null);
+            const [journalEntries, setJournalEntries] = useState(() => {
+                const saved = localStorage.getItem('bloom-journal');
+                return saved ? JSON.parse(saved) : {};
+            });
+            const [currentJournal, setCurrentJournal] = useState('');
+            const [checkedTests, setCheckedTests] = useState(() => {
+                const saved = localStorage.getItem('bloom-checked-tests');
+                return saved ? JSON.parse(saved) : {};
+            });
+
+            const weekData = WEEK_DATA[currentWeek - 1] || WEEK_DATA[0];
+            const trimester = weekData.trimester;
+            const nutritionFocus = TRIMESTER_NUTRITION_FOCUS[trimester];
+            const workoutPlan = WORKOUT_PLANS[trimester];
+
+            useEffect(() => { localStorage.setItem('bloom-current-week', currentWeek); }, [currentWeek]);
+            useEffect(() => { localStorage.setItem('bloom-completed-workouts', JSON.stringify(completedWorkouts)); }, [completedWorkouts]);
+            useEffect(() => { localStorage.setItem('bloom-due-date', dueDateInput); }, [dueDateInput]);
+            useEffect(() => { localStorage.setItem('bloom-journal', JSON.stringify(journalEntries)); }, [journalEntries]);
+            useEffect(() => { localStorage.setItem('bloom-checked-tests', JSON.stringify(checkedTests)); }, [checkedTests]);
+
+            const toggleWorkout = (dayIdx, exIdx) => {
+                const key = `${currentWeek}-${dayIdx}-${exIdx}`;
+                setCompletedWorkouts(prev => ({ ...prev, [key]: !prev[key] }));
+            };
+
+            const toggleTest = (weekNum, testIdx) => {
+                const key = `${weekNum}-${testIdx}`;
+                setCheckedTests(prev => ({ ...prev, [key]: !prev[key] }));
+            };
+
+            const saveJournal = () => {
+                if (currentJournal.trim()) {
+                    setJournalEntries(prev => ({
+                        ...prev,
+                        [currentWeek]: [...(prev[currentWeek] || []), { text: currentJournal, date: new Date().toLocaleDateString() }]
+                    }));
+                    setCurrentJournal('');
+                }
+            };
+
+            const daysUntilDue = useMemo(() => {
+                if (!dueDateInput) return null;
+                const due = new Date(dueDateInput);
+                const now = new Date();
+                const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+                return diff > 0 ? diff : 0;
+            }, [dueDateInput]);
+
+            const tabs = [
+                { id: 'overview', label: 'Overview', icon: '🌸' },
+                { id: 'nutrition', label: 'Nutrition', icon: '🥗' },
+                { id: 'workout', label: 'Workout', icon: '🧘' },
+                { id: 'doctor', label: 'Doctor', icon: '🩺' },
+                { id: 'journal', label: 'Journal', icon: '📔' }
+            ];
+
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+            return (
+                <div className="min-h-screen pb-24">
+                    {/* Header */}
+                    <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/70 border-b border-pink-100/50">
+                        <div className="max-w-2xl mx-auto px-4 py-3">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-pink-300 bg-clip-text text-transparent">
+                                        Bloom
+                                    </h1>
+                                    <p className="text-xs text-gray-400 font-hand text-lg -mt-1">your pregnancy journey</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {daysUntilDue !== null && (
+                                        <div className="text-right">
+                                            <div className="text-lg font-bold font-display text-purple-400">{daysUntilDue}</div>
+                                            <div className="text-[10px] text-gray-400">days to go</div>
+                                        </div>
+                                    )}
+                                    <button onClick={() => setShowSettings(!showSettings)}
+                                        className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center hover:shadow-md transition-all">
+                                        ⚙️
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Settings Panel */}
+                            {showSettings && (
+                                <div className="mt-3 p-4 rounded-2xl watercolor-card animate-fade-in">
+                                    <div className="flex flex-col gap-3">
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-500 mb-1 block">Current Week</label>
+                                            <div className="flex items-center gap-2">
+                                                <input type="range" min="1" max="40" value={currentWeek} onChange={e => setCurrentWeek(parseInt(e.target.value))}
+                                                    className="flex-1 accent-pink-400" />
+                                                <span className="text-sm font-bold text-purple-500 w-16 text-right">Week {currentWeek}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-500 mb-1 block">Due Date</label>
+                                            <input type="date" value={dueDateInput} onChange={e => setDueDateInput(e.target.value)}
+                                                className="w-full px-3 py-2 rounded-xl border border-pink-200 bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </header>
+
+                    {/* Week Selector Ribbon */}
+                    <div className="overflow-x-auto scrollbar-hide py-3 px-2 bg-white/30">
+                        <div className="flex gap-1.5 max-w-2xl mx-auto" style={{ width: 'max-content', paddingLeft: '1rem', paddingRight: '1rem' }}>
+                            {WEEK_DATA.map((w) => (
+                                <button key={w.week} onClick={() => setCurrentWeek(w.week)}
+                                    className={`flex-shrink-0 w-10 h-10 rounded-full text-xs font-medium transition-all ${
+                                        currentWeek === w.week
+                                            ? 'bg-gradient-to-br from-pink-400 to-purple-400 text-white shadow-lg scale-110'
+                                            : w.week < currentWeek
+                                                ? 'bg-pink-100 text-pink-500'
+                                                : 'bg-gray-100 text-gray-400'
+                                    }`}>
+                                    {w.week}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <main className="max-w-2xl mx-auto px-4 py-4">
+                        {/* Tab: Overview */}
+                        {activeTab === 'overview' && (
+                            <div className="animate-fade-in space-y-6">
+                                {/* Hero Card */}
+                                <div className="watercolor-card rounded-3xl p-6 text-center">
+                                    <TrimesterBadge trimester={trimester} />
+                                    <h2 className="text-3xl font-display font-bold mt-3 mb-1">Week {currentWeek}</h2>
+                                    <p className="text-gray-500 text-sm mb-4">Baby is the size of a <span className="font-semibold text-pink-500">{weekData.fruit}</span></p>
+
+                                    <div className="flex justify-center mb-4">
+                                        <WatercolorFruit fruit={weekData.fruit} size={weekData.size} color={weekData.color} fruitEmoji={weekData.fruitEmoji} />
+                                    </div>
+
+                                    <div className="inline-block px-4 py-1.5 rounded-full bg-white/60 text-sm">
+                                        📏 {weekData.size} long
+                                    </div>
+
+                                    <p className="mt-4 text-gray-600 leading-relaxed text-sm">{weekData.dev}</p>
+                                </div>
+
+                                {/* Stats Row */}
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="watercolor-card rounded-2xl p-4 text-center">
+                                        <ProgressRing week={currentWeek} />
+                                        <p className="text-xs text-gray-400 mt-2">Progress</p>
+                                    </div>
+                                    <div className="watercolor-card rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+                                        <div className="text-3xl font-display font-bold text-purple-400">{40 - currentWeek}</div>
+                                        <p className="text-xs text-gray-400 mt-1">Weeks Left</p>
+                                        <div className="text-lg mt-1">⏳</div>
+                                    </div>
+                                    <div className="watercolor-card rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+                                        <div className="text-3xl font-display font-bold text-pink-400">{currentWeek}</div>
+                                        <p className="text-xs text-gray-400 mt-1">Weeks Done</p>
+                                        <div className="text-lg mt-1">✨</div>
+                                    </div>
+                                </div>
+
+                                {/* Upcoming Appointments */}
+                                {(() => {
+                                    const upcoming = DOCTOR_CHECKPOINTS.filter(c => c.week >= currentWeek).slice(0, 2);
+                                    if (upcoming.length === 0) return null;
+                                    return (
+                                        <div className="watercolor-card rounded-2xl p-4">
+                                            <h3 className="font-display font-semibold text-lg mb-3">Upcoming Appointments</h3>
+                                            {upcoming.map((apt, i) => (
+                                                <div key={i} className={`flex items-start gap-3 ${i > 0 ? 'mt-3 pt-3 border-t border-pink-100' : ''}`}>
+                                                    <span className="text-2xl">{apt.icon}</span>
+                                                    <div>
+                                                        <p className="font-medium text-sm">{apt.title}</p>
+                                                        <p className="text-xs text-gray-400">Week {apt.week} {apt.week === currentWeek ? '— This week!' : `— In ${apt.week - currentWeek} weeks`}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Quick Nutrition Tip */}
+                                <div className="watercolor-card rounded-2xl p-4">
+                                    <h3 className="font-display font-semibold text-lg mb-2">Today's Nutrition Focus</h3>
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-2xl">🥑</span>
+                                        <div>
+                                            <p className="font-medium text-sm">{nutritionFocus.focus}</p>
+                                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                                {nutritionFocus.nutrients.map((n, i) => (
+                                                    <span key={i} className="px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-xs">{n}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Today's Workout Preview */}
+                                <div className="watercolor-card rounded-2xl p-4 cursor-pointer" onClick={() => setActiveTab('workout')}>
+                                    <h3 className="font-display font-semibold text-lg mb-2">Today's Workout</h3>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">🧘</span>
+                                        <div>
+                                            <p className="font-medium text-sm">{workoutPlan.days[new Date().getDay()].title}</p>
+                                            <p className="text-xs text-gray-400">{workoutPlan.days[new Date().getDay()].duration}</p>
+                                        </div>
+                                        <span className="ml-auto text-gray-300">→</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tab: Nutrition */}
+                        {activeTab === 'nutrition' && (
+                            <div className="animate-fade-in space-y-5">
+                                <div className="text-center mb-2">
+                                    <h2 className="text-2xl font-display font-bold">Nutrition Guide</h2>
+                                    <p className="text-sm text-gray-400 mt-1">Week {currentWeek} · {TRIMESTER_NUTRITION_FOCUS[trimester].focus}</p>
+                                </div>
+
+                                {/* Nutrient Focus */}
+                                <div className="watercolor-card rounded-2xl p-4">
+                                    <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">✅ Key Nutrients This Trimester</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {nutritionFocus.nutrients.map((n, i) => (
+                                            <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-green-50/60">
+                                                <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                                                <span className="text-sm">{n}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Foods to Avoid */}
+                                <div className="watercolor-card rounded-2xl p-4">
+                                    <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">⚠️ Foods to Avoid</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {nutritionFocus.avoid.map((item, i) => (
+                                            <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-red-50/60">
+                                                <span className="w-2 h-2 rounded-full bg-red-300"></span>
+                                                <span className="text-sm text-red-700">{item}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Day selector */}
+                                <div className="flex gap-2 justify-center">
+                                    {dayNames.map((d, i) => (
+                                        <button key={d} onClick={() => setSelectedDay(i)}
+                                            className={`w-10 h-10 rounded-full text-xs font-medium transition-all ${
+                                                selectedDay === i
+                                                    ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white shadow-md'
+                                                    : 'bg-white/60 text-gray-500 hover:bg-green-50'
+                                            }`}>
+                                            {d}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Daily Recipe */}
+                                {(() => {
+                                    const nutrition = getNutritionForDay(currentWeek, selectedDay);
+                                    return (
+                                        <div className="space-y-4">
+                                            <div className="watercolor-card rounded-2xl p-5">
+                                                <div className="flex items-start gap-3">
+                                                    <span className="text-2xl">💡</span>
+                                                    <div>
+                                                        <h3 className="font-semibold">{nutrition.title}</h3>
+                                                        <p className="text-sm text-gray-500 mt-1 leading-relaxed">{nutrition.tip}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="recipe-card watercolor-card rounded-2xl p-5 cursor-pointer"
+                                                onClick={() => setExpandedRecipe(expandedRecipe === selectedDay ? null : selectedDay)}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-2xl">👩‍🍳</span>
+                                                        <div>
+                                                            <h3 className="font-semibold">{nutrition.recipe.name}</h3>
+                                                            <p className="text-xs text-gray-400">Tap to see recipe</p>
+                                                        </div>
+                                                    </div>
+                                                    <span className={`transition-transform ${expandedRecipe === selectedDay ? 'rotate-180' : ''}`}>▼</span>
+                                                </div>
+
+                                                {expandedRecipe === selectedDay && (
+                                                    <div className="mt-4 pt-4 border-t border-pink-100 animate-fade-in">
+                                                        <div className="mb-3">
+                                                            <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Ingredients</h4>
+                                                            <ul className="space-y-1">
+                                                                {nutrition.recipe.ingredients.map((ing, i) => (
+                                                                    <li key={i} className="text-sm flex items-center gap-2">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-pink-300"></span>
+                                                                        {ing}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Instructions</h4>
+                                                            <p className="text-sm text-gray-600 leading-relaxed">{nutrition.recipe.instructions}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Water Tracker */}
+                                <div className="watercolor-card rounded-2xl p-4">
+                                    <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">💧 Daily Water Intake</h3>
+                                    <p className="text-xs text-gray-400 mb-3">Aim for 8-10 glasses per day</p>
+                                    <WaterTracker />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tab: Workout */}
+                        {activeTab === 'workout' && (
+                            <div className="animate-fade-in space-y-5">
+                                <div className="text-center mb-2">
+                                    <h2 className="text-2xl font-display font-bold">{workoutPlan.name}</h2>
+                                    <p className="text-sm text-gray-400 mt-1">{workoutPlan.note}</p>
+                                </div>
+
+                                {/* Safety Reminder */}
+                                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+                                    <span className="text-xl">⚠️</span>
+                                    <div>
+                                        <p className="text-sm font-medium text-amber-800">Safety Reminder</p>
+                                        <p className="text-xs text-amber-600 mt-1">Always consult your healthcare provider before exercising. Stop if you feel dizzy, short of breath, or experience any pain.</p>
+                                    </div>
+                                </div>
+
+                                {/* Day Tabs */}
+                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                    {workoutPlan.days.map((d, i) => (
+                                        <button key={i} onClick={() => setSelectedDay(i)}
+                                            className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                                                selectedDay === i
+                                                    ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white shadow-md'
+                                                    : 'bg-white/60 text-gray-500 hover:bg-purple-50'
+                                            }`}>
+                                            {d.day}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Selected Day Workout */}
+                                {(() => {
+                                    const dayPlan = workoutPlan.days[selectedDay];
+                                    const dayExercises = dayPlan.exercises;
+                                    const completedCount = dayExercises.filter((_, i) => completedWorkouts[`${currentWeek}-${selectedDay}-${i}`]).length;
+                                    const allCompleted = completedCount === dayExercises.length;
+
+                                    return (
+                                        <div className="watercolor-card rounded-2xl p-5">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <h3 className="font-display font-semibold text-lg">{dayPlan.title}</h3>
+                                                    <p className="text-xs text-gray-400">⏱ {dayPlan.duration}</p>
+                                                </div>
+                                                {allCompleted && <span className="text-2xl animate-float">🎉</span>}
+                                            </div>
+
+                                            {/* Progress Bar */}
+                                            <div className="h-2 rounded-full bg-gray-100 mb-4 overflow-hidden">
+                                                <div className="h-full rounded-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-500"
+                                                    style={{ width: `${(completedCount / dayExercises.length) * 100}%` }}></div>
+                                            </div>
+                                            <p className="text-xs text-gray-400 mb-4">{completedCount}/{dayExercises.length} completed</p>
+
+                                            <div className="space-y-3">
+                                                {dayExercises.map((ex, i) => {
+                                                    const isComplete = completedWorkouts[`${currentWeek}-${selectedDay}-${i}`];
+                                                    return (
+                                                        <div key={i} className={`workout-card flex items-center gap-3 p-3 rounded-xl transition-all ${
+                                                            isComplete ? 'bg-green-50/60' : 'bg-white/40'
+                                                        }`}>
+                                                            <input type="checkbox" checked={isComplete || false}
+                                                                onChange={() => toggleWorkout(selectedDay, i)}
+                                                                className="checkbox-custom" />
+                                                            <div className="flex-1">
+                                                                <p className={`text-sm font-medium ${isComplete ? 'line-through text-gray-400' : ''}`}>{ex.name}</p>
+                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                    {ex.duration && <span className="text-xs text-purple-400">⏱ {ex.duration}</span>}
+                                                                    {ex.reps && <span className="text-xs text-pink-400">🔄 {ex.reps}</span>}
+                                                                </div>
+                                                                {ex.note && <p className="text-xs text-gray-400 mt-0.5">{ex.note}</p>}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
+
+                        {/* Tab: Doctor */}
+                        {activeTab === 'doctor' && (
+                            <div className="animate-fade-in space-y-5">
+                                <div className="text-center mb-2">
+                                    <h2 className="text-2xl font-display font-bold">Doctor Checkpoints</h2>
+                                    <p className="text-sm text-gray-400 mt-1">Your prenatal care timeline</p>
+                                </div>
+
+                                <div className="relative">
+                                    {/* Timeline Line */}
+                                    <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-pink-300 via-purple-300 to-pink-300"></div>
+
+                                    <div className="space-y-4">
+                                        {DOCTOR_CHECKPOINTS.map((checkpoint, idx) => {
+                                            const isPast = checkpoint.week < currentWeek;
+                                            const isCurrent = checkpoint.week === currentWeek;
+                                            const isNext = !isPast && !isCurrent && DOCTOR_CHECKPOINTS.filter(c => c.week >= currentWeek)[0]?.week === checkpoint.week;
+
+                                            return (
+                                                <div key={idx} className="relative pl-14">
+                                                    {/* Timeline Dot */}
+                                                    <div className={`absolute left-4 w-5 h-5 rounded-full border-2 transition-all ${
+                                                        isPast ? 'bg-green-400 border-green-400' :
+                                                        isCurrent ? 'bg-pink-400 border-pink-400 animate-pulse-soft scale-125' :
+                                                        'bg-white border-gray-300'
+                                                    }`}>
+                                                        {isPast && <span className="absolute inset-0 flex items-center justify-center text-white text-[10px]">✓</span>}
+                                                    </div>
+
+                                                    <div className={`watercolor-card rounded-2xl p-4 transition-all ${
+                                                        isCurrent ? 'ring-2 ring-pink-300 shadow-lg' :
+                                                        isNext ? 'ring-1 ring-purple-200' : ''
+                                                    } ${isPast ? 'opacity-60' : ''}`}>
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex items-start gap-3">
+                                                                <span className="text-2xl">{checkpoint.icon}</span>
+                                                                <div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <h3 className="font-semibold text-sm">{checkpoint.title}</h3>
+                                                                        {isCurrent && <span className="px-2 py-0.5 rounded-full bg-pink-100 text-pink-600 text-[10px] font-medium">THIS WEEK</span>}
+                                                                        {isNext && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-600 text-[10px] font-medium">NEXT UP</span>}
+                                                                    </div>
+                                                                    <p className="text-xs text-gray-400 mt-0.5">Week {checkpoint.week}</p>
+                                                                    <p className="text-xs text-gray-500 mt-1">{checkpoint.desc}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Tests Checklist */}
+                                                        <div className="mt-3 pt-3 border-t border-pink-50">
+                                                            <p className="text-[10px] font-semibold text-gray-400 uppercase mb-2">Tests & Procedures</p>
+                                                            <div className="space-y-1.5">
+                                                                {checkpoint.tests.map((test, tIdx) => (
+                                                                    <label key={tIdx} className="flex items-center gap-2 cursor-pointer group">
+                                                                        <input type="checkbox"
+                                                                            checked={checkedTests[`${checkpoint.week}-${tIdx}`] || false}
+                                                                            onChange={() => toggleTest(checkpoint.week, tIdx)}
+                                                                            className="checkbox-custom" style={{ width: 16, height: 16 }} />
+                                                                        <span className={`text-xs group-hover:text-pink-500 transition-colors ${
+                                                                            checkedTests[`${checkpoint.week}-${tIdx}`] ? 'line-through text-gray-300' : 'text-gray-600'
+                                                                        }`}>{test}</span>
+                                                                    </label>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tab: Journal */}
+                        {activeTab === 'journal' && (
+                            <div className="animate-fade-in space-y-5">
+                                <div className="text-center mb-2">
+                                    <h2 className="text-2xl font-display font-bold">Pregnancy Journal</h2>
+                                    <p className="text-sm text-gray-400 mt-1">Capture your memories and feelings</p>
+                                </div>
+
+                                {/* New Entry */}
+                                <div className="watercolor-card rounded-2xl p-5">
+                                    <h3 className="font-display font-semibold mb-3">Week {currentWeek} Entry</h3>
+                                    <textarea
+                                        value={currentJournal}
+                                        onChange={e => setCurrentJournal(e.target.value)}
+                                        placeholder="How are you feeling today? Any special moments to remember? 💕"
+                                        className="w-full h-32 p-3 rounded-xl bg-white/60 border border-pink-100 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-pink-200 font-hand text-lg"
+                                    />
+                                    <button onClick={saveJournal}
+                                        className="mt-3 px-6 py-2 rounded-full bg-gradient-to-r from-pink-400 to-purple-400 text-white text-sm font-medium hover:shadow-lg transition-all">
+                                        Save Entry 💌
+                                    </button>
+                                </div>
+
+                                {/* Past Entries */}
+                                {Object.entries(journalEntries).sort((a, b) => b[0] - a[0]).map(([week, entries]) => (
+                                    <div key={week} className="watercolor-card rounded-2xl p-4">
+                                        <h3 className="font-display font-semibold text-sm mb-3 flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-300 to-purple-300 flex items-center justify-center text-white text-[10px]">{week}</span>
+                                            Week {week}
+                                        </h3>
+                                        {entries.map((entry, i) => (
+                                            <div key={i} className={`${i > 0 ? 'mt-3 pt-3 border-t border-pink-50' : ''}`}>
+                                                <p className="text-sm text-gray-600 font-hand text-lg leading-relaxed">{entry.text}</p>
+                                                <p className="text-[10px] text-gray-300 mt-1">{entry.date}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+
+                                {Object.keys(journalEntries).length === 0 && (
+                                    <div className="text-center py-8 text-gray-300">
+                                        <span className="text-4xl block mb-3">📝</span>
+                                        <p className="text-sm">Your journal is empty. Start writing!</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Bottom Navigation */}
+                    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-pink-100/50 z-50">
+                        <div className="max-w-2xl mx-auto flex justify-around py-2 px-2">
+                            {tabs.map(tab => (
+                                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                                    className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all ${
+                                        activeTab === tab.id ? 'tab-active' : 'text-gray-400 hover:text-gray-600'
+                                    }`}>
+                                    <span className="text-lg">{tab.icon}</span>
+                                    <span className="text-[10px] font-medium">{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </nav>
+                </div>
+            );
+        }
+
+        // ─── WATER TRACKER COMPONENT ─────────────────────────────────
+        function WaterTracker() {
+            const [glasses, setGlasses] = useState(() => {
+                const saved = localStorage.getItem('bloom-water-' + new Date().toDateString());
+                return saved ? parseInt(saved) : 0;
+            });
+
+            useEffect(() => {
+                localStorage.setItem('bloom-water-' + new Date().toDateString(), glasses);
+            }, [glasses]);
+
+            return (
+                <div className="flex flex-wrap gap-2 items-center">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                        <button key={i} onClick={() => setGlasses(i + 1)}
+                            className={`w-8 h-10 rounded-lg transition-all text-lg ${
+                                i < glasses
+                                    ? 'bg-blue-100 scale-105'
+                                    : 'bg-gray-50 opacity-40'
+                            }`}>
+                            {i < glasses ? '💧' : '○'}
+                        </button>
+                    ))}
+                    <span className="text-xs text-gray-400 ml-2">{glasses}/10</span>
+                </div>
+            );
+        }
+
+        // ─── RENDER ──────────────────────────────────────────────────
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(KonMariMovingAssistant));
+        root.render(<App />);
     </script>
 </body>
 </html>
