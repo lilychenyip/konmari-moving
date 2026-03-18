@@ -3,408 +3,776 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bloom - Pregnancy Journey Tracker</title>
+    <title>Expecting Better</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✿</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #FFF9F5; color: #4A3728; }
-        .font-display { font-family: 'Playfair Display', serif; }
-        .font-hand { font-family: 'Caveat', cursive; }
-        .watercolor-blob { filter: url(#watercolor); opacity: 0.85; }
-        .watercolor-card {
-            background: linear-gradient(135deg, rgba(255,228,225,0.4), rgba(255,240,230,0.3), rgba(230,240,255,0.3));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,200,180,0.3);
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background: #F5F0EB;
+            color: #2C2C2C;
+            -webkit-font-smoothing: antialiased;
         }
-        .watercolor-bg {
-            background: linear-gradient(180deg, #FFF9F5 0%, #FFF0EA 30%, #F8F0FF 60%, #FFF9F5 100%);
+        .font-serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 0; height: 0; }
+
+        /* Animations */
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-up { animation: fadeUp 0.5s ease-out forwards; }
+        .animate-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        /* Cards */
+        .card {
+            background: #FDFCFA;
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 16px;
         }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #E8C4B8; border-radius: 3px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-        @keyframes pulse-soft { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        .animate-float { animation: float 4s ease-in-out infinite; }
-        .animate-pulse-soft { animation: pulse-soft 3s ease-in-out infinite; }
-        .tab-active {
-            background: linear-gradient(135deg, #F9A8D4, #C4B5FD);
-            color: white;
-            box-shadow: 0 4px 15px rgba(249,168,212,0.3);
+        .card-warm {
+            background: #F0EBE3;
+            border: none;
+            border-radius: 16px;
         }
-        .progress-ring { transition: stroke-dashoffset 0.8s ease-in-out; }
-        .recipe-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
-        .recipe-card { transition: all 0.3s ease; }
-        .workout-card:hover { transform: scale(1.02); }
-        .workout-card { transition: all 0.3s ease; }
-        .checkbox-custom {
+
+        /* Pill buttons */
+        .pill {
+            padding: 8px 18px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 400;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: transparent;
+            cursor: pointer;
+        }
+        .pill:hover { background: rgba(0,0,0,0.03); }
+        .pill-active {
+            background: #2C2C2C !important;
+            color: #F5F0EB !important;
+            border-color: #2C2C2C !important;
+        }
+
+        /* Checkbox */
+        .check-custom {
             appearance: none; width: 20px; height: 20px;
-            border: 2px solid #E8C4B8; border-radius: 50%;
-            cursor: pointer; transition: all 0.2s;
+            border: 1.5px solid #C5BFB6;
+            border-radius: 6px; cursor: pointer;
+            transition: all 0.2s; flex-shrink: 0;
         }
-        .checkbox-custom:checked {
-            background: linear-gradient(135deg, #F9A8D4, #C4B5FD);
-            border-color: transparent;
+        .check-custom:checked {
+            background: #2C2C2C;
+            border-color: #2C2C2C;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+            background-size: 14px; background-position: center; background-repeat: no-repeat;
         }
-        .yt-btn {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 500;
-            background: linear-gradient(135deg, #FF6B6B, #EE5A24);
-            color: white; text-decoration: none; transition: all 0.2s;
+
+        /* YouTube button */
+        .yt-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 100px;
+            font-size: 13px; font-weight: 500; letter-spacing: 0.01em;
+            background: #2C2C2C; color: #F5F0EB;
+            text-decoration: none; transition: all 0.25s ease;
         }
-        .yt-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(238,90,36,0.3); }
-        .meal-section { border-left: 3px solid; padding-left: 12px; margin-bottom: 12px; }
-        .meal-breakfast { border-color: #FBBF8E; }
-        .meal-lunch { border-color: #A7C4A0; }
-        .meal-dinner { border-color: #C4B5FD; }
-        .meal-snack { border-color: #F9A8D4; }
+        .yt-link:hover { background: #1a1a1a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+        /* Meal type indicator */
+        .meal-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+        /* Divider */
+        .divider { height: 1px; background: rgba(0,0,0,0.06); }
+
+        /* Tab bar */
+        .tab-bar {
+            background: rgba(253,252,250,0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .tab-item {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 2px; padding: 6px 0; font-size: 10px;
+            color: #A09890; transition: color 0.2s;
+            background: none; border: none; cursor: pointer;
+            letter-spacing: 0.03em; text-transform: uppercase;
+            font-weight: 500;
+        }
+        .tab-item-active { color: #2C2C2C; }
+
+        /* Progress bar */
+        .progress-track { height: 3px; background: #E8E3DC; border-radius: 2px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #2C2C2C; border-radius: 2px; transition: width 0.6s ease; }
+
+        input[type="date"], input[type="text"] {
+            font-family: 'DM Sans', sans-serif;
+            padding: 12px 16px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 12px;
+            background: #FDFCFA;
+            font-size: 14px;
+            color: #2C2C2C;
+            outline: none;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: #2C2C2C; }
+
+        textarea {
+            font-family: 'DM Sans', sans-serif;
+            padding: 16px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 12px;
+            background: #FDFCFA;
+            font-size: 14px;
+            color: #2C2C2C;
+            outline: none;
+            width: 100%;
+            resize: none;
+            transition: border-color 0.2s;
+        }
+        textarea:focus { border-color: #2C2C2C; }
+
+        .btn-primary {
+            padding: 12px 28px;
+            border-radius: 100px;
+            background: #2C2C2C;
+            color: #F5F0EB;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
+        }
+        .btn-primary:hover { background: #1a1a1a; }
+        .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .btn-outline {
+            padding: 12px 28px;
+            border-radius: 100px;
+            background: transparent;
+            color: #2C2C2C;
+            font-size: 14px;
+            font-weight: 400;
+            border: 1px solid rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-outline:hover { background: rgba(0,0,0,0.03); }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
     </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        bloom: { 50: '#FFF9F5', 100: '#FFF0EA', 200: '#FFE0D0', 300: '#F9A8D4', 400: '#C4B5FD', 500: '#A78BFA', 600: '#7C3AED', rose: '#F9A8D4', lavender: '#C4B5FD', peach: '#FBBF8E', sage: '#A7C4A0', sky: '#93C5FD' }
-                    }
-                }
-            }
-        }
-    </script>
 </head>
-<body class="watercolor-bg min-h-screen">
-    <svg style="position:absolute;width:0;height:0">
-        <defs>
-            <filter id="watercolor">
-                <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="4" result="turbulence"/>
-                <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="6" xChannelSelector="R" yChannelSelector="G"/>
-            </filter>
-        </defs>
-    </svg>
+<body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect, useCallback, useMemo, useRef } = React;
+        const { useState, useEffect, useMemo } = React;
 
-        // ─── WEEK DATA ────────────────────────────────────────────────
         const WEEK_DATA = [
-            { week: 1, fruit: "Poppy Seed", size: "0.1 cm", fruitEmoji: "🫘", trimester: 1, dev: "Fertilization occurs. The journey begins!", color: "#FFE4E1" },
-            { week: 2, fruit: "Poppy Seed", size: "0.1 cm", fruitEmoji: "🫘", trimester: 1, dev: "The fertilized egg implants in the uterine wall.", color: "#FFE4E1" },
-            { week: 3, fruit: "Poppy Seed", size: "0.2 cm", fruitEmoji: "🫘", trimester: 1, dev: "The blastocyst is implanting. Cells are dividing rapidly.", color: "#FFE4E1" },
-            { week: 4, fruit: "Poppy Seed", size: "0.4 cm", fruitEmoji: "🫘", trimester: 1, dev: "The neural tube is forming. The heart begins to beat!", color: "#FFDAB9" },
-            { week: 5, fruit: "Sesame Seed", size: "0.5 cm", fruitEmoji: "🌾", trimester: 1, dev: "Tiny buds that will become arms and legs appear.", color: "#FFDAB9" },
-            { week: 6, fruit: "Lentil", size: "0.6 cm", fruitEmoji: "🟤", trimester: 1, dev: "The nose, mouth, and ears are starting to take shape.", color: "#FFDAB9" },
-            { week: 7, fruit: "Blueberry", size: "1.3 cm", fruitEmoji: "🫐", trimester: 1, dev: "Baby is generating about 100 new brain cells every minute!", color: "#E6E0FF" },
-            { week: 8, fruit: "Raspberry", size: "1.6 cm", fruitEmoji: "🍇", trimester: 1, dev: "Fingers and toes are forming. Baby starts moving!", color: "#FFD0E0" },
-            { week: 9, fruit: "Cherry", size: "2.3 cm", fruitEmoji: "🍒", trimester: 1, dev: "All essential organs have begun to form.", color: "#FFB6C1" },
-            { week: 10, fruit: "Strawberry", size: "3.1 cm", fruitEmoji: "🍓", trimester: 1, dev: "Bones are beginning to harden. Baby can swallow!", color: "#FF9999" },
-            { week: 11, fruit: "Lime", size: "4.1 cm", fruitEmoji: "🟢", trimester: 1, dev: "Baby is almost fully formed with tiny tooth buds.", color: "#C1FFC1" },
-            { week: 12, fruit: "Plum", size: "5.4 cm", fruitEmoji: "🟣", trimester: 1, dev: "Reflexes are developing. Baby can open and close fists!", color: "#DDA0DD" },
-            { week: 13, fruit: "Peach", size: "7.4 cm", fruitEmoji: "🍑", trimester: 2, dev: "Fingerprints have formed! Vocal cords are developing.", color: "#FFDAB9" },
-            { week: 14, fruit: "Lemon", size: "8.7 cm", fruitEmoji: "🍋", trimester: 2, dev: "Baby can squint, frown, and make facial expressions.", color: "#FFFACD" },
-            { week: 15, fruit: "Apple", size: "10.1 cm", fruitEmoji: "🍎", trimester: 2, dev: "Baby can sense light and is forming taste buds.", color: "#FFB3B3" },
-            { week: 16, fruit: "Avocado", size: "11.6 cm", fruitEmoji: "🥑", trimester: 2, dev: "Baby's circulatory system is now fully functional!", color: "#C8E6C9" },
-            { week: 17, fruit: "Pear", size: "13 cm", fruitEmoji: "🍐", trimester: 2, dev: "Baby's skeleton is changing from cartilage to bone.", color: "#E8F5E9" },
-            { week: 18, fruit: "Bell Pepper", size: "14.2 cm", fruitEmoji: "🫑", trimester: 2, dev: "Baby can hear sounds! Time to start talking to them.", color: "#FFF9C4" },
-            { week: 19, fruit: "Mango", size: "15.3 cm", fruitEmoji: "🥭", trimester: 2, dev: "A protective coating called vernix covers the skin.", color: "#FFE0B2" },
-            { week: 20, fruit: "Banana", size: "16.4 cm", fruitEmoji: "🍌", trimester: 2, dev: "Halfway there! Baby is swallowing more and producing meconium.", color: "#FFF9C4" },
-            { week: 21, fruit: "Carrot", size: "26.7 cm", fruitEmoji: "🥕", trimester: 2, dev: "Baby's movements are more coordinated now.", color: "#FFE0B2" },
-            { week: 22, fruit: "Papaya", size: "27.8 cm", fruitEmoji: "🧡", trimester: 2, dev: "Baby looks like a miniature newborn. Eyes are formed!", color: "#FFCCBC" },
-            { week: 23, fruit: "Grapefruit", size: "28.9 cm", fruitEmoji: "🍊", trimester: 2, dev: "Baby can hear your voice and music from outside!", color: "#FFE0B2" },
-            { week: 24, fruit: "Cantaloupe", size: "30 cm", fruitEmoji: "🍈", trimester: 2, dev: "Baby's face is almost fully formed. So beautiful!", color: "#FFE4CC" },
-            { week: 25, fruit: "Cauliflower", size: "34.6 cm", fruitEmoji: "🤍", trimester: 2, dev: "Baby is gaining baby fat and starting to fill out.", color: "#FFF8E1" },
-            { week: 26, fruit: "Lettuce", size: "35.6 cm", fruitEmoji: "🥬", trimester: 2, dev: "Baby's eyes are opening! They can see light and dark.", color: "#E8F5E9" },
-            { week: 27, fruit: "Cauliflower", size: "36.6 cm", fruitEmoji: "🤍", trimester: 3, dev: "Baby can now open and close their eyes and suck their thumb.", color: "#F3E5F5" },
-            { week: 28, fruit: "Eggplant", size: "37.6 cm", fruitEmoji: "🍆", trimester: 3, dev: "Baby's brain is developing billions of neurons!", color: "#E1BEE7" },
-            { week: 29, fruit: "Butternut Squash", size: "38.6 cm", fruitEmoji: "🎃", trimester: 3, dev: "Baby's muscles and lungs are continuing to mature.", color: "#FFE0B2" },
-            { week: 30, fruit: "Coconut", size: "39.9 cm", fruitEmoji: "🥥", trimester: 3, dev: "Baby's brain is growing rapidly with new connections.", color: "#EFEBE9" },
-            { week: 31, fruit: "Pineapple", size: "41.1 cm", fruitEmoji: "🍍", trimester: 3, dev: "Baby can turn their head from side to side.", color: "#FFF9C4" },
-            { week: 32, fruit: "Squash", size: "42.4 cm", fruitEmoji: "🟡", trimester: 3, dev: "Baby is practicing breathing movements.", color: "#FFF3E0" },
-            { week: 33, fruit: "Celery", size: "43.7 cm", fruitEmoji: "🥒", trimester: 3, dev: "Baby's bones are hardening, but skull stays soft for delivery.", color: "#E8F5E9" },
-            { week: 34, fruit: "Pineapple", size: "45 cm", fruitEmoji: "🍍", trimester: 3, dev: "Baby's central nervous system is maturing.", color: "#FFF9C4" },
-            { week: 35, fruit: "Honeydew Melon", size: "46.2 cm", fruitEmoji: "🍈", trimester: 3, dev: "Baby's kidneys are fully developed. Almost ready!", color: "#E0F7FA" },
-            { week: 36, fruit: "Romaine Lettuce", size: "47.4 cm", fruitEmoji: "🥬", trimester: 3, dev: "Baby is shedding their downy hair and waxy coating.", color: "#E8F5E9" },
-            { week: 37, fruit: "Swiss Chard", size: "48.6 cm", fruitEmoji: "🥬", trimester: 3, dev: "Baby is considered early term! Practicing for the big day.", color: "#C8E6C9" },
-            { week: 38, fruit: "Leek", size: "49.8 cm", fruitEmoji: "🟢", trimester: 3, dev: "Baby's brain and lungs continue maturing.", color: "#E0F2F1" },
-            { week: 39, fruit: "Watermelon", size: "50.7 cm", fruitEmoji: "🍉", trimester: 3, dev: "Full term! Baby is ready to meet you anytime now!", color: "#FFCDD2" },
-            { week: 40, fruit: "Pumpkin", size: "51.2 cm", fruitEmoji: "🎃", trimester: 3, dev: "Due date! Your baby is the size of a small pumpkin. Welcome, little one!", color: "#FFE0B2" }
+            { week: 1, fruit: "Poppy Seed", size: "0.1 cm", emoji: "🫘", tri: 1, dev: "Fertilization occurs. The journey begins!", color: "#E8E3DC" },
+            { week: 2, fruit: "Poppy Seed", size: "0.1 cm", emoji: "🫘", tri: 1, dev: "The fertilized egg implants in the uterine wall.", color: "#E8E3DC" },
+            { week: 3, fruit: "Poppy Seed", size: "0.2 cm", emoji: "🫘", tri: 1, dev: "The blastocyst is implanting. Cells are dividing rapidly.", color: "#E8E3DC" },
+            { week: 4, fruit: "Poppy Seed", size: "0.4 cm", emoji: "🫘", tri: 1, dev: "The neural tube is forming. The heart begins to beat!", color: "#E0DDD6" },
+            { week: 5, fruit: "Sesame Seed", size: "0.5 cm", emoji: "🌾", tri: 1, dev: "Tiny buds that will become arms and legs appear.", color: "#E0DDD6" },
+            { week: 6, fruit: "Lentil", size: "0.6 cm", emoji: "🟤", tri: 1, dev: "The nose, mouth, and ears are starting to take shape.", color: "#E0DDD6" },
+            { week: 7, fruit: "Blueberry", size: "1.3 cm", emoji: "🫐", tri: 1, dev: "Generating about 100 new brain cells every minute.", color: "#D8D3CC" },
+            { week: 8, fruit: "Raspberry", size: "1.6 cm", emoji: "🍇", tri: 1, dev: "Fingers and toes are forming. Baby starts moving!", color: "#D8D3CC" },
+            { week: 9, fruit: "Cherry", size: "2.3 cm", emoji: "🍒", tri: 1, dev: "All essential organs have begun to form.", color: "#D8D3CC" },
+            { week: 10, fruit: "Strawberry", size: "3.1 cm", emoji: "🍓", tri: 1, dev: "Bones are beginning to harden. Baby can swallow!", color: "#D0CBC4" },
+            { week: 11, fruit: "Lime", size: "4.1 cm", emoji: "🟢", tri: 1, dev: "Almost fully formed with tiny tooth buds.", color: "#D0CBC4" },
+            { week: 12, fruit: "Plum", size: "5.4 cm", emoji: "🟣", tri: 1, dev: "Reflexes developing. Baby can open and close fists!", color: "#D0CBC4" },
+            { week: 13, fruit: "Peach", size: "7.4 cm", emoji: "🍑", tri: 2, dev: "Fingerprints have formed! Vocal cords developing.", color: "#E8E3DC" },
+            { week: 14, fruit: "Lemon", size: "8.7 cm", emoji: "🍋", tri: 2, dev: "Baby can squint, frown, and make facial expressions.", color: "#E8E3DC" },
+            { week: 15, fruit: "Apple", size: "10.1 cm", emoji: "🍎", tri: 2, dev: "Baby can sense light and is forming taste buds.", color: "#E0DDD6" },
+            { week: 16, fruit: "Avocado", size: "11.6 cm", emoji: "🥑", tri: 2, dev: "Circulatory system is now fully functional!", color: "#E0DDD6" },
+            { week: 17, fruit: "Pear", size: "13 cm", emoji: "🍐", tri: 2, dev: "Skeleton is changing from cartilage to bone.", color: "#D8D3CC" },
+            { week: 18, fruit: "Bell Pepper", size: "14.2 cm", emoji: "🫑", tri: 2, dev: "Baby can hear sounds! Time to start talking to them.", color: "#D8D3CC" },
+            { week: 19, fruit: "Mango", size: "15.3 cm", emoji: "🥭", tri: 2, dev: "A protective coating called vernix covers the skin.", color: "#D0CBC4" },
+            { week: 20, fruit: "Banana", size: "16.4 cm", emoji: "🍌", tri: 2, dev: "Halfway there! Baby is swallowing more now.", color: "#D0CBC4" },
+            { week: 21, fruit: "Carrot", size: "26.7 cm", emoji: "🥕", tri: 2, dev: "Movements are more coordinated now.", color: "#E8E3DC" },
+            { week: 22, fruit: "Papaya", size: "27.8 cm", emoji: "🧡", tri: 2, dev: "Looks like a miniature newborn. Eyes are formed!", color: "#E0DDD6" },
+            { week: 23, fruit: "Grapefruit", size: "28.9 cm", emoji: "🍊", tri: 2, dev: "Baby can hear your voice and music!", color: "#D8D3CC" },
+            { week: 24, fruit: "Cantaloupe", size: "30 cm", emoji: "🍈", tri: 2, dev: "Face is almost fully formed. So beautiful!", color: "#D0CBC4" },
+            { week: 25, fruit: "Cauliflower", size: "34.6 cm", emoji: "🤍", tri: 2, dev: "Gaining baby fat and starting to fill out.", color: "#E8E3DC" },
+            { week: 26, fruit: "Lettuce", size: "35.6 cm", emoji: "🥬", tri: 2, dev: "Eyes are opening! Can see light and dark.", color: "#E0DDD6" },
+            { week: 27, fruit: "Cauliflower", size: "36.6 cm", emoji: "🤍", tri: 3, dev: "Can open and close eyes and suck their thumb.", color: "#E8E3DC" },
+            { week: 28, fruit: "Eggplant", size: "37.6 cm", emoji: "🍆", tri: 3, dev: "Brain is developing billions of neurons!", color: "#E0DDD6" },
+            { week: 29, fruit: "Butternut Squash", size: "38.6 cm", emoji: "🎃", tri: 3, dev: "Muscles and lungs are continuing to mature.", color: "#D8D3CC" },
+            { week: 30, fruit: "Coconut", size: "39.9 cm", emoji: "🥥", tri: 3, dev: "Brain is growing rapidly with new connections.", color: "#D0CBC4" },
+            { week: 31, fruit: "Pineapple", size: "41.1 cm", emoji: "🍍", tri: 3, dev: "Can turn their head from side to side.", color: "#E8E3DC" },
+            { week: 32, fruit: "Squash", size: "42.4 cm", emoji: "🟡", tri: 3, dev: "Practicing breathing movements.", color: "#E0DDD6" },
+            { week: 33, fruit: "Celery", size: "43.7 cm", emoji: "🥒", tri: 3, dev: "Bones hardening, but skull stays soft for delivery.", color: "#D8D3CC" },
+            { week: 34, fruit: "Pineapple", size: "45 cm", emoji: "🍍", tri: 3, dev: "Central nervous system is maturing.", color: "#D0CBC4" },
+            { week: 35, fruit: "Honeydew", size: "46.2 cm", emoji: "🍈", tri: 3, dev: "Kidneys are fully developed. Almost ready!", color: "#E8E3DC" },
+            { week: 36, fruit: "Romaine", size: "47.4 cm", emoji: "🥬", tri: 3, dev: "Shedding downy hair and waxy coating.", color: "#E0DDD6" },
+            { week: 37, fruit: "Swiss Chard", size: "48.6 cm", emoji: "🥬", tri: 3, dev: "Early term! Practicing for the big day.", color: "#D8D3CC" },
+            { week: 38, fruit: "Leek", size: "49.8 cm", emoji: "🟢", tri: 3, dev: "Brain and lungs continue maturing.", color: "#D0CBC4" },
+            { week: 39, fruit: "Watermelon", size: "50.7 cm", emoji: "🍉", tri: 3, dev: "Full term! Ready to meet you anytime!", color: "#E8E3DC" },
+            { week: 40, fruit: "Pumpkin", size: "51.2 cm", emoji: "🎃", tri: 3, dev: "Due date! Welcome, little one!", color: "#E0DDD6" }
         ];
 
-        const DOCTOR_CHECKPOINTS = [
-            { week: 8, title: "First Prenatal Visit", desc: "Confirm pregnancy, blood tests, health history, due date calculation", icon: "🩺", tests: ["Blood type & Rh factor", "Complete blood count", "Urinalysis", "STI screening", "Pap smear if due"] },
-            { week: 10, title: "Optional: NIPT Screening", desc: "Non-invasive prenatal testing for chromosomal conditions", icon: "🧬", tests: ["NIPT blood draw", "Screens for Down syndrome, Trisomy 18 & 13", "Can reveal baby's sex"] },
-            { week: 12, title: "First Trimester Screening", desc: "Nuchal translucency ultrasound and blood work", icon: "📷", tests: ["NT ultrasound", "Blood screening", "First glimpse of baby!"] },
-            { week: 16, title: "Second Trimester Visit", desc: "Check growth and listen to heartbeat", icon: "💓", tests: ["Fundal height measurement", "Fetal heartbeat check", "Quad screen blood test", "AFP screening"] },
-            { week: 20, title: "Anatomy Scan", desc: "Detailed ultrasound to check baby's development", icon: "🖼️", tests: ["Full anatomy survey", "Organ development check", "Placenta position", "Gender reveal possible!", "Amniotic fluid levels"] },
-            { week: 24, title: "Glucose Screening", desc: "Test for gestational diabetes", icon: "🍬", tests: ["Glucose challenge test (1-hour)", "Blood pressure check", "Weight check", "Urine protein check"] },
-            { week: 28, title: "Third Trimester Begins", desc: "Rh factor test, begin biweekly visits", icon: "💉", tests: ["Rh antibody screen", "RhoGAM injection if Rh-negative", "Tdap vaccine recommended", "Kick count education"] },
-            { week: 32, title: "Growth Check", desc: "Monitor baby's growth and position", icon: "📏", tests: ["Growth ultrasound", "Baby position check", "Blood pressure monitoring", "Swelling assessment"] },
-            { week: 36, title: "Weekly Visits Begin", desc: "Group B Strep test, cervical checks may begin", icon: "🔬", tests: ["Group B Strep swab", "Cervical check (optional)", "Baby position confirmation", "Birth plan discussion"] },
+        const CHECKPOINTS = [
+            { week: 8, title: "First Prenatal Visit", desc: "Confirm pregnancy, blood tests, health history", icon: "🩺", tests: ["Blood type & Rh factor", "Complete blood count", "Urinalysis", "STI screening", "Pap smear if due"] },
+            { week: 10, title: "NIPT Screening", desc: "Non-invasive prenatal testing for chromosomal conditions", icon: "🧬", tests: ["NIPT blood draw", "Down syndrome screening", "Can reveal baby's sex"] },
+            { week: 12, title: "First Trimester Screening", desc: "Nuchal translucency ultrasound and blood work", icon: "📷", tests: ["NT ultrasound", "Blood screening", "First glimpse of baby"] },
+            { week: 16, title: "Second Trimester Visit", desc: "Check growth and listen to heartbeat", icon: "💓", tests: ["Fundal height", "Fetal heartbeat", "Quad screen", "AFP screening"] },
+            { week: 20, title: "Anatomy Scan", desc: "Detailed ultrasound to check development", icon: "🖼️", tests: ["Full anatomy survey", "Organ development", "Placenta position", "Gender reveal possible", "Amniotic fluid levels"] },
+            { week: 24, title: "Glucose Screening", desc: "Test for gestational diabetes", icon: "🍬", tests: ["Glucose challenge test", "Blood pressure", "Weight check", "Urine protein"] },
+            { week: 28, title: "Third Trimester Begins", desc: "Rh factor test, begin biweekly visits", icon: "💉", tests: ["Rh antibody screen", "RhoGAM if Rh-negative", "Tdap vaccine", "Kick count education"] },
+            { week: 32, title: "Growth Check", desc: "Monitor baby's growth and position", icon: "📏", tests: ["Growth ultrasound", "Baby position check", "Blood pressure", "Swelling assessment"] },
+            { week: 36, title: "Weekly Visits Begin", desc: "Group B Strep test, cervical checks", icon: "🔬", tests: ["Group B Strep swab", "Cervical check", "Baby position", "Birth plan discussion"] },
             { week: 38, title: "Pre-Birth Check", desc: "Final preparations and monitoring", icon: "📋", tests: ["Non-stress test", "Amniotic fluid check", "Cervical progress", "Labor signs education"] },
-            { week: 40, title: "Due Date Visit", desc: "Evaluate if induction needed", icon: "🎉", tests: ["Non-stress test", "Biophysical profile", "Induction discussion if needed", "You're almost there!"] }
+            { week: 40, title: "Due Date Visit", desc: "Evaluate if induction is needed", icon: "🎉", tests: ["Non-stress test", "Biophysical profile", "Induction discussion", "Almost there!"] }
         ];
 
-        const TRIMESTER_NUTRITION_FOCUS = {
+        const NUTRITION_FOCUS = {
             1: { focus: "Folate, Iron & Ginger for nausea", nutrients: ["Folic Acid", "Iron", "Vitamin B6", "Ginger"], avoid: ["Raw fish", "Unpasteurized cheese", "Excess caffeine", "Deli meats"] },
             2: { focus: "Calcium, Protein & Omega-3s for growth", nutrients: ["Calcium", "Protein", "Omega-3 DHA", "Vitamin D"], avoid: ["High-mercury fish", "Raw sprouts", "Excess sugar", "Alcohol"] },
-            3: { focus: "Fiber, Magnesium & Vitamin K for delivery prep", nutrients: ["Fiber", "Magnesium", "Vitamin K", "Choline"], avoid: ["Excess sodium", "Large meals before bed", "Spicy foods if heartburn", "Raw eggs"] }
+            3: { focus: "Fiber, Magnesium & Vitamin K for delivery", nutrients: ["Fiber", "Magnesium", "Vitamin K", "Choline"], avoid: ["Excess sodium", "Large meals before bed", "Spicy if heartburn", "Raw eggs"] }
         };
 
-        // ─── MEAL PLANS ───────────────────────────────────────────────
-        const MEAL_PLANS = {
+        // ─── MEAL PLANS: multiple options per meal per day ────────────
+        const MEALS = {
             1: [
-                { day: "Sunday", breakfast: { name: "Greek Yogurt Parfait", desc: "Protein-packed start with probiotics", ingredients: ["1 cup Greek yogurt", "1/4 cup granola", "Mixed berries", "Drizzle honey", "1 tbsp chia seeds"], instructions: "Layer yogurt, berries, granola. Top with honey and chia seeds." }, lunch: { name: "Lentil & Spinach Soup", desc: "Iron and folate powerhouse", ingredients: ["1 cup red lentils", "2 cups spinach", "1 carrot diced", "1 can diced tomatoes", "4 cups broth", "Cumin & turmeric"], instructions: "Sauté carrot, add spices, lentils, tomatoes, broth. Simmer 20 min, stir in spinach." }, dinner: { name: "Baked Salmon with Sweet Potato", desc: "Omega-3 rich dinner for baby's brain", ingredients: ["2 salmon fillets", "2 sweet potatoes", "Olive oil, lemon, dill", "Asparagus"], instructions: "Bake salmon at 400°F 12-15 min with lemon and dill. Serve with roasted sweet potato." }, snack: { name: "Apple slices with almond butter and a sprinkle of cinnamon", ingredients: ["1 apple", "2 tbsp almond butter", "Cinnamon"] } },
-                { day: "Monday", breakfast: { name: "Green Power Smoothie", desc: "Folate-rich morning boost", ingredients: ["1 cup spinach", "1 banana", "1/2 cup blueberries", "1 tbsp chia seeds", "1 cup almond milk"], instructions: "Blend all ingredients until smooth." }, lunch: { name: "Quinoa Buddha Bowl", desc: "Complete protein with fiber", ingredients: ["1 cup cooked quinoa", "Roasted chickpeas", "Avocado", "Sweet potato cubes", "Tahini dressing"], instructions: "Arrange all over quinoa. Drizzle with tahini mixed with lemon." }, dinner: { name: "Chicken Stir-Fry with Ginger", desc: "Anti-nausea dinner with lean protein", ingredients: ["Chicken breast sliced", "Broccoli florets", "Bell peppers", "Fresh ginger", "Soy sauce", "Brown rice"], instructions: "Stir-fry chicken with ginger, add veggies, serve over brown rice." }, snack: { name: "Whole grain crackers with hummus", ingredients: ["Whole grain crackers", "1/4 cup hummus", "Cherry tomatoes"] } },
-                { day: "Tuesday", breakfast: { name: "Oatmeal with Walnuts & Berries", desc: "Fiber and omega-3s", ingredients: ["1/2 cup rolled oats", "1 cup milk", "Walnuts", "Blueberries", "Honey"], instructions: "Cook oats with milk, top with walnuts, berries, and honey." }, lunch: { name: "Turkey & Avocado Wrap", desc: "Lean protein lunch", ingredients: ["Whole wheat tortilla", "Sliced turkey", "Avocado", "Lettuce, tomato", "Mustard"], instructions: "Layer turkey, avocado, veggies in tortilla. Roll and enjoy." }, dinner: { name: "Beef & Vegetable Stew", desc: "Iron-rich comfort meal", ingredients: ["Lean beef cubes", "Potatoes", "Carrots", "Celery", "Beef broth", "Thyme"], instructions: "Brown beef, add veggies and broth. Simmer 45 min until tender." }, snack: { name: "Trail mix with dried fruit and dark chocolate", ingredients: ["Almonds", "Dried cranberries", "Dark chocolate chips"] } },
-                { day: "Wednesday", breakfast: { name: "Avocado Toast with Egg", desc: "Healthy fats and choline", ingredients: ["Whole grain bread", "1/2 avocado", "1 egg", "Everything seasoning", "Lemon juice"], instructions: "Toast bread, mash avocado with lemon, top with fried or poached egg." }, lunch: { name: "Mediterranean Salad", desc: "Vitamin-rich and refreshing", ingredients: ["Mixed greens", "Cucumber", "Cherry tomatoes", "Feta cheese", "Olives", "Olive oil dressing"], instructions: "Toss all ingredients, drizzle with olive oil and lemon." }, dinner: { name: "Baked Chicken Thighs with Roasted Veggies", desc: "Easy one-pan dinner", ingredients: ["4 chicken thighs", "Zucchini", "Bell peppers", "Red onion", "Italian seasoning"], instructions: "Season chicken, arrange with veggies on sheet pan. Bake 400°F 35 min." }, snack: { name: "Banana with peanut butter", ingredients: ["1 banana", "2 tbsp peanut butter"] } },
-                { day: "Thursday", breakfast: { name: "Whole Wheat Pancakes", desc: "Comforting breakfast with whole grains", ingredients: ["1 cup whole wheat flour", "1 egg", "1 cup milk", "Maple syrup", "Fresh strawberries"], instructions: "Mix batter, cook on griddle. Top with strawberries and maple syrup." }, lunch: { name: "Black Bean Soup", desc: "Fiber and plant protein", ingredients: ["2 cans black beans", "Onion, garlic", "Cumin, chili powder", "Chicken broth", "Sour cream, cilantro"], instructions: "Sauté onion, add beans, spices, broth. Simmer 20 min, blend partially." }, dinner: { name: "Pasta Primavera", desc: "Veggie-loaded comfort food", ingredients: ["Whole wheat pasta", "Zucchini, squash", "Cherry tomatoes", "Garlic", "Parmesan", "Olive oil"], instructions: "Cook pasta. Sauté veggies in olive oil with garlic. Toss together, top with parmesan." }, snack: { name: "Cottage cheese with pineapple", ingredients: ["1/2 cup cottage cheese", "Pineapple chunks"] } },
-                { day: "Friday", breakfast: { name: "Spinach & Cheese Omelet", desc: "Protein and folate packed", ingredients: ["3 eggs", "Handful spinach", "Cheddar cheese", "Mushrooms", "Salt & pepper"], instructions: "Whisk eggs, pour in pan. Add spinach, mushrooms, cheese. Fold and serve." }, lunch: { name: "Chicken Caesar Salad", desc: "Classic protein-rich lunch", ingredients: ["Romaine lettuce", "Grilled chicken", "Parmesan", "Croutons", "Caesar dressing (pasteurized)"], instructions: "Toss romaine with dressing, top with chicken, parmesan, croutons." }, dinner: { name: "Shrimp Tacos", desc: "Light and flavorful", ingredients: ["Cooked shrimp", "Corn tortillas", "Cabbage slaw", "Avocado crema", "Lime"], instructions: "Season and cook shrimp. Assemble tacos with slaw and avocado crema." }, snack: { name: "Celery sticks with cream cheese", ingredients: ["Celery stalks", "2 tbsp cream cheese", "Raisins (optional)"] } },
-                { day: "Saturday", breakfast: { name: "Berry Smoothie Bowl", desc: "Antioxidant morning treat", ingredients: ["Frozen mixed berries", "1 banana", "Greek yogurt", "Granola", "Coconut flakes"], instructions: "Blend berries, banana, yogurt thick. Pour in bowl, top with granola and coconut." }, lunch: { name: "Grilled Cheese & Tomato Soup", desc: "Comforting calcium-rich combo", ingredients: ["Whole grain bread", "Cheddar cheese", "Butter", "Canned tomato soup"], instructions: "Make grilled cheese with whole grain bread. Heat tomato soup." }, dinner: { name: "Herb-Crusted Cod with Quinoa", desc: "Lean protein with complete grains", ingredients: ["Cod fillets", "Fresh herbs (parsley, dill)", "Lemon", "Quinoa", "Steamed broccoli"], instructions: "Coat cod in herbs, bake 400°F 12 min. Serve with quinoa and broccoli." }, snack: { name: "Yogurt-dipped frozen grapes", ingredients: ["Grapes", "Greek yogurt", "Honey"] } }
+                { day: "Sunday",
+                  breakfast: [
+                    { name: "Greek Yogurt Parfait", desc: "Layered with granola, berries, honey & chia seeds" },
+                    { name: "Ginger Oatmeal", desc: "Steel-cut oats with fresh ginger, banana & walnuts" }
+                  ],
+                  lunch: [
+                    { name: "Lentil & Spinach Soup", desc: "Red lentils, spinach, tomato, cumin & turmeric" },
+                    { name: "Mediterranean Grain Bowl", desc: "Quinoa, cucumber, tomato, feta & olive oil" }
+                  ],
+                  dinner: [
+                    { name: "Baked Salmon & Sweet Potato", desc: "Wild salmon with lemon-dill, roasted sweet potato" },
+                    { name: "Chicken & Veggie Stir-Fry", desc: "Ginger chicken with broccoli, peppers over brown rice" }
+                  ],
+                  snacks: ["Apple slices with almond butter", "Whole grain crackers with hummus"]
+                },
+                { day: "Monday",
+                  breakfast: [
+                    { name: "Green Power Smoothie", desc: "Spinach, banana, blueberries, chia seeds & almond milk" },
+                    { name: "Avocado Toast with Egg", desc: "Whole grain toast, mashed avocado & poached egg" }
+                  ],
+                  lunch: [
+                    { name: "Quinoa Buddha Bowl", desc: "Roasted chickpeas, avocado, sweet potato & tahini" },
+                    { name: "Turkey & Avocado Wrap", desc: "Whole wheat tortilla with turkey, avocado & greens" }
+                  ],
+                  dinner: [
+                    { name: "Herb-Crusted Cod with Quinoa", desc: "Fresh herbs, lemon, steamed broccoli" },
+                    { name: "Pasta Primavera", desc: "Whole wheat pasta with seasonal vegetables & parmesan" }
+                  ],
+                  snacks: ["Trail mix with dried cranberries", "Banana with peanut butter"]
+                },
+                { day: "Tuesday",
+                  breakfast: [
+                    { name: "Oatmeal with Walnuts & Berries", desc: "Rolled oats, milk, walnuts, blueberries & honey" },
+                    { name: "Spinach & Cheese Omelet", desc: "Three eggs with spinach, mushrooms & cheddar" }
+                  ],
+                  lunch: [
+                    { name: "Chicken Caesar Salad", desc: "Romaine, grilled chicken, parmesan & croutons" },
+                    { name: "Black Bean Soup", desc: "Cumin-spiced with sour cream & fresh cilantro" }
+                  ],
+                  dinner: [
+                    { name: "Beef & Vegetable Stew", desc: "Lean beef, potatoes, carrots, celery in herb broth" },
+                    { name: "Baked Chicken with Roasted Veggies", desc: "Italian seasoned thighs with zucchini & peppers" }
+                  ],
+                  snacks: ["Cottage cheese with pineapple", "Dark chocolate with almonds"]
+                },
+                { day: "Wednesday",
+                  breakfast: [
+                    { name: "Berry Smoothie Bowl", desc: "Frozen berries, banana, yogurt topped with granola" },
+                    { name: "Whole Wheat Pancakes", desc: "With fresh strawberries & maple syrup" }
+                  ],
+                  lunch: [
+                    { name: "Grilled Cheese & Tomato Soup", desc: "Whole grain bread, cheddar & classic tomato soup" },
+                    { name: "Kale & Citrus Salad", desc: "Massaged kale, orange segments, pomegranate & feta" }
+                  ],
+                  dinner: [
+                    { name: "Shrimp Tacos", desc: "Seasoned shrimp, cabbage slaw, avocado crema & lime" },
+                    { name: "One-Pan Lemon Chicken", desc: "Roasted with potatoes, green beans & fresh herbs" }
+                  ],
+                  snacks: ["Yogurt-dipped frozen grapes", "Celery with cream cheese"]
+                },
+                { day: "Thursday",
+                  breakfast: [
+                    { name: "Egg & Veggie Breakfast Burrito", desc: "Scrambled eggs, black beans, peppers & cheese" },
+                    { name: "Chia Pudding with Mango", desc: "Overnight chia, coconut milk & fresh mango" }
+                  ],
+                  lunch: [
+                    { name: "Sweet Potato & Lentil Bowl", desc: "Roasted sweet potato, green lentils & tahini" },
+                    { name: "Veggie & Hummus Wrap", desc: "Hummus, cucumber, roasted peppers & spinach" }
+                  ],
+                  dinner: [
+                    { name: "Teriyaki Salmon with Broccoli", desc: "Glazed salmon, steamed broccoli & brown rice" },
+                    { name: "Vegetable Lasagna", desc: "Layers of ricotta, spinach, marinara & mozzarella" }
+                  ],
+                  snacks: ["Rice cakes with avocado", "Dates stuffed with almond butter"]
+                },
+                { day: "Friday",
+                  breakfast: [
+                    { name: "French Toast with Berries", desc: "Thick-cut bread, cinnamon egg batter & mixed berries" },
+                    { name: "Peanut Butter Banana Smoothie", desc: "Banana, PB, milk, flaxseed & a touch of honey" }
+                  ],
+                  lunch: [
+                    { name: "Asian Chicken Lettuce Wraps", desc: "Ground chicken, water chestnuts, hoisin in butter lettuce" },
+                    { name: "Minestrone Soup", desc: "White beans, zucchini, carrots, pasta in tomato broth" }
+                  ],
+                  dinner: [
+                    { name: "Grilled Chicken & Mashed Potatoes", desc: "Herb chicken, creamy potatoes & steamed green beans" },
+                    { name: "Pesto Shrimp Pasta", desc: "Whole wheat penne, basil pesto & cherry tomatoes" }
+                  ],
+                  snacks: ["Popcorn with nutritional yeast", "Frozen yogurt bark with berries"]
+                },
+                { day: "Saturday",
+                  breakfast: [
+                    { name: "Shakshuka", desc: "Eggs poached in spiced tomato sauce with feta" },
+                    { name: "Cottage Cheese & Fruit Bowl", desc: "Cottage cheese with peaches, blueberries & granola" }
+                  ],
+                  lunch: [
+                    { name: "Tuna Salad on Greens", desc: "Light tuna, mixed greens, avocado & lemon dressing" },
+                    { name: "Stuffed Bell Peppers", desc: "Rice, turkey, tomato sauce & melted cheese" }
+                  ],
+                  dinner: [
+                    { name: "Slow Cooker Chicken Stew", desc: "Tender chicken, potatoes, carrots & fresh herbs" },
+                    { name: "Vegetable Curry with Rice", desc: "Chickpeas, sweet potato, spinach in coconut curry" }
+                  ],
+                  snacks: ["Mango with chili-lime", "Chocolate milk"]
+                }
             ],
             2: [
-                { day: "Sunday", breakfast: { name: "Protein Pancakes", desc: "Extra protein for growing baby", ingredients: ["1 cup oat flour", "1 scoop protein powder", "1 egg", "1 cup milk", "Banana slices"], instructions: "Mix ingredients, cook on griddle. Top with banana slices." }, lunch: { name: "Salmon & Avocado Poke Bowl", desc: "Omega-3 and healthy fats", ingredients: ["Cooked salmon cubes", "Sushi rice", "Avocado", "Edamame", "Soy sauce, sesame seeds"], instructions: "Arrange salmon, avocado, edamame over rice. Drizzle soy sauce." }, dinner: { name: "Chicken Parmesan with Pasta", desc: "Calcium from cheese, protein from chicken", ingredients: ["Chicken breasts", "Marinara sauce", "Mozzarella", "Whole wheat spaghetti", "Italian seasoning"], instructions: "Bread and bake chicken, top with sauce and cheese. Serve with pasta." }, snack: { name: "Cheese and whole grain crackers with grapes", ingredients: ["Cheddar slices", "Whole grain crackers", "Grapes"] } },
-                { day: "Monday", breakfast: { name: "Egg & Veggie Breakfast Burrito", desc: "Protein-packed portable breakfast", ingredients: ["Whole wheat tortilla", "2 scrambled eggs", "Black beans", "Bell pepper", "Cheese, salsa"], instructions: "Scramble eggs with peppers, add beans and cheese. Wrap in tortilla." }, lunch: { name: "Chicken & Vegetable Soup", desc: "Comforting and nutrient-dense", ingredients: ["Chicken breast", "Carrots, celery", "Potatoes", "Chicken broth", "Fresh dill"], instructions: "Simmer chicken in broth, add chopped veggies. Cook 25 min." }, dinner: { name: "Beef Tacos with Black Beans", desc: "Iron and protein combo", ingredients: ["Ground beef", "Taco seasoning", "Black beans", "Corn tortillas", "Lettuce, tomato, cheese"], instructions: "Brown beef with seasoning. Serve in tortillas with toppings." }, snack: { name: "Smoothie with banana, spinach, and protein powder", ingredients: ["1 banana", "Spinach", "Protein powder", "Almond milk"] } },
-                { day: "Tuesday", breakfast: { name: "Overnight Oats with Mango", desc: "Prep the night before, vitamin C boost", ingredients: ["1/2 cup oats", "1/2 cup milk", "1/4 cup yogurt", "Mango chunks", "Chia seeds"], instructions: "Mix oats, milk, yogurt, chia. Refrigerate overnight. Top with mango." }, lunch: { name: "Spinach & Feta Stuffed Peppers", desc: "Calcium and iron rich", ingredients: ["Bell peppers halved", "Spinach", "Feta cheese", "Rice", "Garlic, onion"], instructions: "Mix filling ingredients, stuff peppers. Bake 375°F 25 min." }, dinner: { name: "Teriyaki Salmon with Broccoli", desc: "Brain-building omega-3 dinner", ingredients: ["Salmon fillets", "Teriyaki sauce", "Broccoli", "Brown rice", "Sesame seeds"], instructions: "Glaze salmon with teriyaki, bake 400°F 15 min. Serve with rice and broccoli." }, snack: { name: "Greek yogurt with honey and walnuts", ingredients: ["Greek yogurt", "Honey", "Walnuts"] } },
-                { day: "Wednesday", breakfast: { name: "Cottage Cheese & Fruit Bowl", desc: "High protein calcium boost", ingredients: ["1 cup cottage cheese", "Peach slices", "Blueberries", "Granola", "Honey drizzle"], instructions: "Top cottage cheese with fruit and granola." }, lunch: { name: "Turkey Club Sandwich", desc: "Classic protein lunch", ingredients: ["Whole grain bread", "Sliced turkey", "Bacon", "Lettuce, tomato", "Mayo, mustard"], instructions: "Layer ingredients on toasted bread. Cut diagonally." }, dinner: { name: "One-Pot Chicken & Rice", desc: "Easy comfort dinner", ingredients: ["Chicken thighs", "Jasmine rice", "Peas, carrots", "Chicken broth", "Garlic, onion"], instructions: "Brown chicken, add rice, veggies, broth. Cover and cook 20 min." }, snack: { name: "Rice cakes with avocado and everything seasoning", ingredients: ["Rice cakes", "1/2 avocado", "Everything seasoning"] } },
-                { day: "Thursday", breakfast: { name: "Banana Walnut Muffins", desc: "Homemade with omega-3s", ingredients: ["Ripe bananas", "Whole wheat flour", "Walnuts", "Eggs", "Honey, cinnamon"], instructions: "Mash bananas, mix with dry ingredients. Bake 350°F 20 min." }, lunch: { name: "Asian Chicken Lettuce Wraps", desc: "Light and fresh", ingredients: ["Ground chicken", "Water chestnuts", "Soy sauce, hoisin", "Butter lettuce", "Green onions"], instructions: "Cook chicken with sauces, spoon into lettuce cups." }, dinner: { name: "Vegetable Lasagna", desc: "Calcium-rich cheesy comfort", ingredients: ["Lasagna noodles", "Ricotta cheese", "Spinach", "Marinara", "Mozzarella"], instructions: "Layer noodles, ricotta-spinach mix, sauce, cheese. Bake 375°F 45 min." }, snack: { name: "Dark chocolate squares with almonds", ingredients: ["Dark chocolate (70%+)", "Almonds"] } },
-                { day: "Friday", breakfast: { name: "Shakshuka", desc: "Eggs in spiced tomato, iron-rich", ingredients: ["Eggs", "Canned tomatoes", "Bell pepper", "Onion", "Cumin, paprika", "Feta"], instructions: "Simmer tomato sauce with spices, crack eggs in. Cover and cook 8 min." }, lunch: { name: "Tuna Salad on Greens", desc: "Low-mercury tuna with greens", ingredients: ["Canned light tuna", "Mixed greens", "Avocado", "Cherry tomatoes", "Lemon vinaigrette"], instructions: "Mix tuna with lemon. Serve over greens with toppings." }, dinner: { name: "Grilled Chicken with Mashed Potatoes", desc: "Classic comfort dinner", ingredients: ["Chicken breast", "Potatoes", "Butter, milk", "Green beans", "Garlic, herbs"], instructions: "Grill chicken. Boil and mash potatoes with butter. Steam green beans." }, snack: { name: "Frozen yogurt bark", ingredients: ["Greek yogurt", "Berries", "Honey", "Granola"] } },
-                { day: "Saturday", breakfast: { name: "French Toast with Berries", desc: "Weekend treat with eggs", ingredients: ["Thick bread slices", "Eggs", "Milk, vanilla", "Cinnamon", "Mixed berries", "Maple syrup"], instructions: "Dip bread in egg mixture, cook golden. Top with berries and syrup." }, lunch: { name: "Veggie & Hummus Wrap", desc: "Plant-based lunch", ingredients: ["Whole wheat wrap", "Hummus", "Cucumber", "Roasted red peppers", "Spinach, feta"], instructions: "Spread hummus on wrap, add veggies and feta. Roll tight." }, dinner: { name: "Pesto Shrimp Pasta", desc: "Quick omega-3 dinner", ingredients: ["Shrimp", "Whole wheat penne", "Basil pesto", "Cherry tomatoes", "Pine nuts"], instructions: "Cook pasta and shrimp. Toss with pesto and tomatoes." }, snack: { name: "Mango slices with chili-lime seasoning", ingredients: ["Fresh mango", "Chili-lime seasoning", "Lime juice"] } }
+                { day: "Sunday",
+                  breakfast: [
+                    { name: "Protein Pancakes", desc: "Oat flour, protein powder, banana slices & maple syrup" },
+                    { name: "Egg Muffin Cups", desc: "Baked eggs with spinach, bell pepper & cheese" }
+                  ],
+                  lunch: [
+                    { name: "Salmon Poke Bowl", desc: "Cooked salmon, sushi rice, avocado, edamame & sesame" },
+                    { name: "Chicken & Vegetable Soup", desc: "Chicken breast, carrots, celery, potatoes & dill" }
+                  ],
+                  dinner: [
+                    { name: "Chicken Parmesan with Pasta", desc: "Baked chicken, marinara, mozzarella & whole wheat spaghetti" },
+                    { name: "Herb Roasted Chicken & Potatoes", desc: "Rosemary-thyme chicken with baby potatoes & green beans" }
+                  ],
+                  snacks: ["Cheese & crackers with grapes", "Smoothie with spinach & berries"]
+                },
+                { day: "Monday",
+                  breakfast: [
+                    { name: "Overnight Oats with Mango", desc: "Oats, yogurt, milk, chia seeds topped with mango" },
+                    { name: "Breakfast Quesadilla", desc: "Eggs, cheese, black beans & salsa in a crispy tortilla" }
+                  ],
+                  lunch: [
+                    { name: "Spinach & Feta Stuffed Peppers", desc: "Bell peppers with spinach, feta, rice & garlic" },
+                    { name: "Turkey Club Sandwich", desc: "Whole grain bread, turkey, bacon, lettuce & tomato" }
+                  ],
+                  dinner: [
+                    { name: "Beef Tacos with Black Beans", desc: "Seasoned beef, black beans, lettuce, cheese & salsa" },
+                    { name: "Baked Cod with Roasted Vegetables", desc: "Herb cod with Brussels sprouts & sweet potato" }
+                  ],
+                  snacks: ["Apple nachos with PB drizzle", "Hummus with veggie sticks"]
+                },
+                { day: "Tuesday",
+                  breakfast: [
+                    { name: "Banana Walnut Muffins", desc: "Homemade with whole wheat flour, walnuts & honey" },
+                    { name: "Veggie Frittata", desc: "Eggs with zucchini, tomatoes, feta & fresh basil" }
+                  ],
+                  lunch: [
+                    { name: "Asian Chicken Lettuce Wraps", desc: "Ground chicken, hoisin, water chestnuts in butter lettuce" },
+                    { name: "Lentil & Kale Soup", desc: "Green lentils, kale, carrots, cumin & vegetable broth" }
+                  ],
+                  dinner: [
+                    { name: "Teriyaki Salmon with Rice", desc: "Glazed salmon, broccoli & brown rice with sesame" },
+                    { name: "Turkey Meatballs & Spaghetti", desc: "Lean turkey meatballs, marinara & whole wheat pasta" }
+                  ],
+                  snacks: ["Dark chocolate squares", "Greek yogurt with honey & walnuts"]
+                },
+                { day: "Wednesday",
+                  breakfast: [
+                    { name: "Avocado Toast with Everything", desc: "Smashed avocado, egg, everything seasoning & lemon" },
+                    { name: "Green Smoothie", desc: "Spinach, banana, mango, protein powder & almond milk" }
+                  ],
+                  lunch: [
+                    { name: "Grilled Chicken Caesar Wrap", desc: "Chicken, romaine, parmesan & Caesar in a wrap" },
+                    { name: "Sweet Potato & Black Bean Bowl", desc: "Roasted sweet potato, black beans, rice & avocado" }
+                  ],
+                  dinner: [
+                    { name: "One-Pot Chicken & Rice", desc: "Chicken thighs, jasmine rice, peas & carrots" },
+                    { name: "Stuffed Bell Peppers", desc: "Ground turkey, rice, tomato sauce & melted cheese" }
+                  ],
+                  snacks: ["Rice cakes with avocado", "Frozen banana bites with dark chocolate"]
+                },
+                { day: "Thursday",
+                  breakfast: [
+                    { name: "French Toast with Berries", desc: "Cinnamon French toast, mixed berries & maple syrup" },
+                    { name: "Chia Pudding with Dates", desc: "Overnight chia, milk, chopped dates & walnuts" }
+                  ],
+                  lunch: [
+                    { name: "Mediterranean Salad", desc: "Mixed greens, cucumber, tomato, olives, feta & olive oil" },
+                    { name: "Chicken Tortilla Soup", desc: "Shredded chicken, black beans, corn & tortilla strips" }
+                  ],
+                  dinner: [
+                    { name: "Pesto Shrimp Pasta", desc: "Shrimp, whole wheat penne, basil pesto & pine nuts" },
+                    { name: "Vegetable Curry with Rice", desc: "Chickpeas, sweet potato, spinach in coconut curry" }
+                  ],
+                  snacks: ["Popcorn with herbs", "Cottage cheese with pineapple"]
+                },
+                { day: "Friday",
+                  breakfast: [
+                    { name: "Shakshuka", desc: "Eggs in spiced tomato sauce with feta & crusty bread" },
+                    { name: "Peanut Butter Banana Oatmeal", desc: "Oats with PB, banana slices, chia & honey" }
+                  ],
+                  lunch: [
+                    { name: "BLT with Avocado", desc: "Whole grain bread, bacon, lettuce, tomato & avocado" },
+                    { name: "Quinoa & Roasted Veggie Bowl", desc: "Quinoa, roasted zucchini, peppers & tahini dressing" }
+                  ],
+                  dinner: [
+                    { name: "Grilled Chicken & Sweet Potatoes", desc: "Herb chicken, roasted sweet potatoes & asparagus" },
+                    { name: "Salmon with Asparagus & Rice", desc: "Garlic butter salmon, asparagus & brown rice" }
+                  ],
+                  snacks: ["Frozen yogurt bark", "Dates stuffed with almond butter"]
+                },
+                { day: "Saturday",
+                  breakfast: [
+                    { name: "Waffles with Fruit Compote", desc: "Whole grain waffles, warm berry compote & cream" },
+                    { name: "Smoked Salmon Toast", desc: "Cream cheese, smoked salmon, capers & dill on toast" }
+                  ],
+                  lunch: [
+                    { name: "Veggie & Hummus Wrap", desc: "Hummus, cucumber, roasted peppers, spinach & feta" },
+                    { name: "Tomato Basil Soup with Grilled Cheese", desc: "Classic combo with whole grain bread & cheddar" }
+                  ],
+                  dinner: [
+                    { name: "Slow Cooker Beef Stew", desc: "Tender beef, potatoes, carrots & herbs" },
+                    { name: "Chicken Stir-Fry with Cashews", desc: "Chicken, vegetables, cashews & soy-ginger sauce" }
+                  ],
+                  snacks: ["Mango slices with chili-lime", "Chocolate milk"]
+                }
             ],
             3: [
-                { day: "Sunday", breakfast: { name: "Egg & Cheese Muffin Cups", desc: "Easy grab-and-go protein", ingredients: ["Eggs", "Cheese", "Spinach", "Bell pepper", "Muffin tin"], instructions: "Whisk eggs with veggies and cheese. Pour in muffin tin. Bake 350°F 20 min." }, lunch: { name: "Chicken Tortilla Soup", desc: "Comforting and easy to digest", ingredients: ["Chicken breast", "Black beans", "Corn", "Tomatoes", "Tortilla strips", "Avocado"], instructions: "Simmer chicken in broth with beans, corn, tomatoes. Shred chicken, top with tortilla strips." }, dinner: { name: "Baked Cod with Roasted Vegetables", desc: "Light protein with fiber", ingredients: ["Cod fillets", "Brussels sprouts", "Sweet potato", "Olive oil", "Lemon, herbs"], instructions: "Roast veggies 20 min, add seasoned cod. Bake 15 min more." }, snack: { name: "Dates stuffed with almond butter", ingredients: ["Medjool dates", "Almond butter"] } },
-                { day: "Monday", breakfast: { name: "Chia Pudding with Berries", desc: "Fiber and omega-3 breakfast", ingredients: ["3 tbsp chia seeds", "1 cup milk", "Vanilla", "Mixed berries", "Honey"], instructions: "Mix chia, milk, vanilla. Refrigerate overnight. Top with berries." }, lunch: { name: "Sweet Potato & Black Bean Bowl", desc: "Magnesium and fiber rich", ingredients: ["Roasted sweet potato", "Black beans", "Rice", "Avocado", "Lime-cilantro dressing"], instructions: "Arrange sweet potato, beans, rice in bowl. Top with avocado and dressing." }, dinner: { name: "Slow Cooker Chicken Stew", desc: "Set it and forget it comfort", ingredients: ["Chicken thighs", "Potatoes, carrots", "Celery, onion", "Chicken broth", "Fresh herbs"], instructions: "Add all ingredients to slow cooker. Cook low 6-8 hours." }, snack: { name: "Whole grain toast with ricotta and honey", ingredients: ["Whole grain bread", "Ricotta cheese", "Honey"] } },
-                { day: "Tuesday", breakfast: { name: "Peanut Butter Banana Smoothie", desc: "Energy boost with protein", ingredients: ["1 banana", "2 tbsp peanut butter", "1 cup milk", "1 tbsp flaxseed", "Ice"], instructions: "Blend all until smooth." }, lunch: { name: "Minestrone Soup", desc: "Veggie and fiber packed", ingredients: ["White beans", "Zucchini, carrots", "Pasta", "Tomatoes", "Italian seasoning", "Broth"], instructions: "Sauté veggies, add beans, tomatoes, broth. Simmer 20 min, add pasta." }, dinner: { name: "Turkey Meatballs with Spaghetti", desc: "Lean protein dinner", ingredients: ["Ground turkey", "Whole wheat breadcrumbs", "Egg", "Spaghetti", "Marinara sauce"], instructions: "Form meatballs, bake 375°F 20 min. Serve with pasta and sauce." }, snack: { name: "Frozen banana bites dipped in dark chocolate", ingredients: ["Banana slices", "Dark chocolate", "Coconut oil"] } },
-                { day: "Wednesday", breakfast: { name: "Veggie Frittata", desc: "Choline-rich egg dish", ingredients: ["4 eggs", "Zucchini", "Tomatoes", "Feta cheese", "Fresh basil"], instructions: "Whisk eggs, pour over sautéed veggies. Cook stovetop, finish under broiler." }, lunch: { name: "Avocado Chicken Salad", desc: "Healthy fats with protein", ingredients: ["Shredded chicken", "Avocado", "Greek yogurt", "Celery, grapes", "Whole grain bread"], instructions: "Mix chicken with mashed avocado and yogurt. Add celery, serve on bread." }, dinner: { name: "Salmon with Asparagus & Rice", desc: "Omega-3 rich third trimester dinner", ingredients: ["Salmon fillets", "Asparagus", "Brown rice", "Lemon", "Garlic butter"], instructions: "Bake salmon and asparagus with garlic butter at 400°F 15 min." }, snack: { name: "Apple nachos with peanut butter drizzle", ingredients: ["Sliced apple", "Peanut butter", "Granola", "Mini chocolate chips"] } },
-                { day: "Thursday", breakfast: { name: "Breakfast Quesadilla", desc: "Quick protein-packed breakfast", ingredients: ["Whole wheat tortilla", "Scrambled eggs", "Cheese", "Black beans", "Salsa"], instructions: "Fill tortilla with eggs, beans, cheese. Cook in pan until crispy." }, lunch: { name: "Lentil & Kale Soup", desc: "Iron and vitamin K boost", ingredients: ["Green lentils", "Kale", "Carrots", "Onion", "Cumin", "Vegetable broth"], instructions: "Simmer lentils in broth 20 min. Add kale and carrots, cook 10 min more." }, dinner: { name: "Herb Roasted Chicken with Potatoes", desc: "Easy sheet pan dinner", ingredients: ["Chicken pieces", "Baby potatoes", "Green beans", "Olive oil", "Rosemary, thyme"], instructions: "Toss everything with oil and herbs. Roast 425°F 35 min." }, snack: { name: "Hummus with veggie sticks", ingredients: ["Hummus", "Carrots", "Cucumber", "Bell pepper strips"] } },
-                { day: "Friday", breakfast: { name: "Overnight Oats with Dates", desc: "Natural sweetness with fiber", ingredients: ["1/2 cup oats", "1/2 cup milk", "Chopped dates", "Walnuts", "Cinnamon"], instructions: "Mix all except walnuts. Refrigerate overnight. Top with walnuts." }, lunch: { name: "Grilled Chicken Caesar Wrap", desc: "Protein and calcium in a wrap", ingredients: ["Whole wheat wrap", "Grilled chicken", "Romaine", "Parmesan", "Caesar dressing"], instructions: "Fill wrap with chicken, romaine, dressing. Roll and cut in half." }, dinner: { name: "Vegetable Curry with Rice", desc: "Anti-inflammatory spices", ingredients: ["Chickpeas", "Sweet potato", "Spinach", "Coconut milk", "Curry paste", "Basmati rice"], instructions: "Cook veggies in coconut milk with curry paste. Serve over rice." }, snack: { name: "Popcorn with nutritional yeast", ingredients: ["Popcorn", "Nutritional yeast", "Olive oil spray"] } },
-                { day: "Saturday", breakfast: { name: "Waffles with Fruit Compote", desc: "Weekend treat with vitamins", ingredients: ["Whole grain waffle mix", "Mixed berries", "Maple syrup", "Whipped cream", "Butter"], instructions: "Make waffles. Simmer berries with a little sugar for compote." }, lunch: { name: "BLT with Avocado", desc: "Classic with healthy fats", ingredients: ["Whole grain bread", "Cooked bacon", "Lettuce, tomato", "Avocado", "Mayo"], instructions: "Toast bread, layer bacon, lettuce, tomato, and avocado." }, dinner: { name: "Stuffed Bell Peppers", desc: "Balanced one-dish meal", ingredients: ["Bell peppers", "Ground turkey", "Rice", "Tomato sauce", "Cheese", "Italian seasoning"], instructions: "Mix turkey, rice, sauce. Stuff peppers, top with cheese. Bake 375°F 30 min." }, snack: { name: "Chocolate milk (great for magnesium!)", ingredients: ["Milk", "Chocolate syrup or cocoa powder"] } }
+                { day: "Sunday",
+                  breakfast: [
+                    { name: "Egg & Cheese Muffin Cups", desc: "Baked eggs with spinach, bell pepper & cheese" },
+                    { name: "Berry Smoothie Bowl", desc: "Thick berry blend topped with granola & coconut" }
+                  ],
+                  lunch: [
+                    { name: "Chicken Tortilla Soup", desc: "Shredded chicken, black beans, corn & avocado" },
+                    { name: "Avocado Chicken Salad", desc: "Shredded chicken, avocado, yogurt, celery on bread" }
+                  ],
+                  dinner: [
+                    { name: "Baked Cod with Roasted Veggies", desc: "Herb cod, Brussels sprouts, sweet potato & lemon" },
+                    { name: "One-Pot Chicken & Rice", desc: "Chicken thighs, jasmine rice, peas & carrots" }
+                  ],
+                  snacks: ["Dates stuffed with almond butter", "Whole grain toast with ricotta & honey"]
+                },
+                { day: "Monday",
+                  breakfast: [
+                    { name: "Chia Pudding with Berries", desc: "Overnight chia, milk, vanilla & mixed berries" },
+                    { name: "Peanut Butter Banana Smoothie", desc: "Banana, PB, milk, flaxseed & ice" }
+                  ],
+                  lunch: [
+                    { name: "Sweet Potato & Black Bean Bowl", desc: "Roasted sweet potato, beans, rice & avocado" },
+                    { name: "Minestrone Soup", desc: "White beans, zucchini, pasta in tomato-herb broth" }
+                  ],
+                  dinner: [
+                    { name: "Slow Cooker Chicken Stew", desc: "Chicken thighs, potatoes, carrots, celery & herbs" },
+                    { name: "Salmon with Asparagus & Rice", desc: "Garlic butter salmon, asparagus & brown rice" }
+                  ],
+                  snacks: ["Hummus with veggie sticks", "Apple slices with almond butter"]
+                },
+                { day: "Tuesday",
+                  breakfast: [
+                    { name: "Veggie Frittata", desc: "Eggs with zucchini, tomatoes, feta & fresh basil" },
+                    { name: "Overnight Oats with Dates", desc: "Oats, milk, chopped dates, walnuts & cinnamon" }
+                  ],
+                  lunch: [
+                    { name: "Lentil & Kale Soup", desc: "Green lentils, kale, carrots & cumin broth" },
+                    { name: "Grilled Chicken Caesar Wrap", desc: "Chicken, romaine, parmesan & dressing in a wrap" }
+                  ],
+                  dinner: [
+                    { name: "Turkey Meatballs & Spaghetti", desc: "Lean turkey, marinara & whole wheat pasta" },
+                    { name: "Vegetable Curry with Rice", desc: "Chickpeas, sweet potato, spinach in coconut curry" }
+                  ],
+                  snacks: ["Frozen banana bites with dark chocolate", "Cottage cheese with pineapple"]
+                },
+                { day: "Wednesday",
+                  breakfast: [
+                    { name: "Breakfast Quesadilla", desc: "Eggs, cheese, black beans & salsa in crispy tortilla" },
+                    { name: "Greek Yogurt Parfait", desc: "Yogurt layered with granola, berries & honey" }
+                  ],
+                  lunch: [
+                    { name: "BLT with Avocado", desc: "Whole grain bread, bacon, lettuce, tomato & avocado" },
+                    { name: "Stuffed Bell Peppers", desc: "Ground turkey, rice, tomato sauce & cheese" }
+                  ],
+                  dinner: [
+                    { name: "Herb Roasted Chicken & Potatoes", desc: "Rosemary-thyme chicken, baby potatoes & green beans" },
+                    { name: "Pesto Shrimp Pasta", desc: "Shrimp, whole wheat penne & basil pesto" }
+                  ],
+                  snacks: ["Apple nachos with PB", "Popcorn with nutritional yeast"]
+                },
+                { day: "Thursday",
+                  breakfast: [
+                    { name: "Avocado Toast with Egg", desc: "Whole grain toast, avocado, poached egg & seasoning" },
+                    { name: "Banana Walnut Oatmeal", desc: "Steel-cut oats, banana, walnuts & cinnamon" }
+                  ],
+                  lunch: [
+                    { name: "Mediterranean Salad", desc: "Greens, cucumber, tomato, feta, olives & olive oil" },
+                    { name: "Sweet Potato & Lentil Soup", desc: "Roasted sweet potato, red lentils & warming spices" }
+                  ],
+                  dinner: [
+                    { name: "Beef & Vegetable Stew", desc: "Lean beef, potatoes, carrots & herb broth" },
+                    { name: "Baked Chicken with Roasted Veggies", desc: "Italian seasoned chicken, zucchini & peppers" }
+                  ],
+                  snacks: ["Trail mix with dark chocolate", "Rice cakes with avocado"]
+                },
+                { day: "Friday",
+                  breakfast: [
+                    { name: "Shakshuka", desc: "Eggs in spiced tomato with feta & crusty bread" },
+                    { name: "Protein Pancakes", desc: "Oat flour pancakes with berries & maple syrup" }
+                  ],
+                  lunch: [
+                    { name: "Chicken & Vegetable Soup", desc: "Chicken, carrots, celery, potatoes & fresh dill" },
+                    { name: "Veggie & Hummus Wrap", desc: "Hummus, cucumber, peppers, spinach & feta" }
+                  ],
+                  dinner: [
+                    { name: "Grilled Chicken & Mashed Potatoes", desc: "Herb chicken, creamy potatoes & green beans" },
+                    { name: "Teriyaki Salmon with Broccoli", desc: "Glazed salmon, steamed broccoli & brown rice" }
+                  ],
+                  snacks: ["Frozen yogurt bark", "Dates with almond butter"]
+                },
+                { day: "Saturday",
+                  breakfast: [
+                    { name: "French Toast with Berries", desc: "Cinnamon French toast, berries & maple syrup" },
+                    { name: "Cottage Cheese & Fruit Bowl", desc: "Cottage cheese with peaches, blueberries & granola" }
+                  ],
+                  lunch: [
+                    { name: "Tomato Soup & Grilled Cheese", desc: "Classic tomato soup with whole grain grilled cheese" },
+                    { name: "Quinoa Buddha Bowl", desc: "Quinoa, roasted chickpeas, avocado & tahini" }
+                  ],
+                  dinner: [
+                    { name: "Stuffed Bell Peppers", desc: "Turkey, rice, tomato sauce & melted cheese" },
+                    { name: "Slow Cooker Chicken Stew", desc: "Tender chicken, potatoes, carrots & herbs" }
+                  ],
+                  snacks: ["Chocolate milk", "Mango with chili-lime"]
+                }
             ]
         };
 
-        // ─── WORKOUT PLANS WITH YOUTUBE ───────────────────────────────
-        const WORKOUT_PLANS = {
+        // ─── WORKOUTS WITH YOUTUBE ────────────────────────────────────
+        const WORKOUTS = {
             1: {
-                name: "First Trimester Fitness",
-                note: "Listen to your body. It's okay to rest! Aim for moderate intensity.",
+                name: "First Trimester",
+                note: "Listen to your body. It's okay to rest.",
                 days: [
-                    { day: "Monday", title: "Gentle Cardio", duration: "25 min", youtube: { title: "Pregnancy Workout - First Trimester", url: "https://www.youtube.com/watch?v=FcEpHr1U1yg" }, exercises: [
-                        { name: "Brisk Walking", duration: "15 min", reps: null, note: "Keep a conversational pace" },
-                        { name: "Arm Circles", duration: "2 min", reps: null, note: "Forward and backward" },
-                        { name: "Standing March", duration: "5 min", reps: null, note: "Lift knees gently" },
-                        { name: "Cool Down Stretch", duration: "3 min", reps: null, note: "Full body stretching" }
+                    { day: "Monday", title: "Gentle Cardio", dur: "25 min", yt: { title: "First Trimester Workout", url: "https://www.youtube.com/watch?v=FcEpHr1U1yg" }, exercises: [
+                        { name: "Brisk Walking", dur: "15 min", note: "Conversational pace" },
+                        { name: "Arm Circles", dur: "2 min", note: "Forward and backward" },
+                        { name: "Standing March", dur: "5 min", note: "Lift knees gently" },
+                        { name: "Cool Down Stretch", dur: "3 min", note: "Full body" }
                     ]},
-                    { day: "Tuesday", title: "Strength & Tone", duration: "20 min", youtube: { title: "Prenatal Strength Training", url: "https://www.youtube.com/watch?v=AUTG3P1xyoI" }, exercises: [
-                        { name: "Wall Push-ups", duration: null, reps: "3 x 10", note: "Keep core engaged" },
-                        { name: "Bodyweight Squats", duration: null, reps: "3 x 12", note: "Feet shoulder-width apart" },
-                        { name: "Bicep Curls", duration: null, reps: "3 x 10", note: "Light weights (3-5 lbs)" },
-                        { name: "Pelvic Tilts", duration: null, reps: "3 x 15", note: "Lying on back" },
-                        { name: "Bird Dogs", duration: null, reps: "3 x 8 each side", note: "Core stability" }
+                    { day: "Tuesday", title: "Strength & Tone", dur: "20 min", yt: { title: "Prenatal Strength Training", url: "https://www.youtube.com/watch?v=AUTG3P1xyoI" }, exercises: [
+                        { name: "Wall Push-ups", reps: "3x10", note: "Core engaged" },
+                        { name: "Bodyweight Squats", reps: "3x12", note: "Shoulder-width apart" },
+                        { name: "Bicep Curls", reps: "3x10", note: "Light weights" },
+                        { name: "Pelvic Tilts", reps: "3x15", note: "On back" },
+                        { name: "Bird Dogs", reps: "3x8 each", note: "Core stability" }
                     ]},
-                    { day: "Wednesday", title: "Prenatal Yoga", duration: "30 min", youtube: { title: "Prenatal Yoga - First Trimester", url: "https://www.youtube.com/watch?v=B05CaFYFMsQ" }, exercises: [
-                        { name: "Cat-Cow Stretches", duration: "3 min", reps: null, note: "Warm up the spine" },
-                        { name: "Warrior II Pose", duration: "2 min each side", reps: null, note: "Build leg strength" },
-                        { name: "Triangle Pose", duration: "1 min each side", reps: null, note: "Side body stretch" },
-                        { name: "Seated Forward Fold", duration: "2 min", reps: null, note: "Gentle hamstring stretch" },
-                        { name: "Savasana", duration: "5 min", reps: null, note: "Deep relaxation" }
+                    { day: "Wednesday", title: "Prenatal Yoga", dur: "30 min", yt: { title: "Prenatal Yoga Flow", url: "https://www.youtube.com/watch?v=B05CaFYFMsQ" }, exercises: [
+                        { name: "Cat-Cow Stretches", dur: "3 min", note: "Warm up spine" },
+                        { name: "Warrior II", dur: "2 min each", note: "Leg strength" },
+                        { name: "Triangle Pose", dur: "1 min each", note: "Side body stretch" },
+                        { name: "Seated Forward Fold", dur: "2 min", note: "Hamstrings" },
+                        { name: "Savasana", dur: "5 min", note: "Deep relaxation" }
                     ]},
-                    { day: "Thursday", title: "Low-Impact Cardio", duration: "25 min", youtube: { title: "Low Impact Prenatal Cardio", url: "https://www.youtube.com/watch?v=jNmHiI8VmCc" }, exercises: [
-                        { name: "Swimming or Water Walking", duration: "20 min", reps: null, note: "Great for joints!" },
-                        { name: "Gentle Stretching", duration: "5 min", reps: null, note: "Focus on hips and back" }
+                    { day: "Thursday", title: "Low-Impact Cardio", dur: "25 min", yt: { title: "Low Impact Prenatal Cardio", url: "https://www.youtube.com/watch?v=jNmHiI8VmCc" }, exercises: [
+                        { name: "Swimming or Water Walking", dur: "20 min", note: "Great for joints" },
+                        { name: "Gentle Stretching", dur: "5 min", note: "Hips and back" }
                     ]},
-                    { day: "Friday", title: "Full Body Strength", duration: "25 min", youtube: { title: "Full Body Prenatal Workout", url: "https://www.youtube.com/watch?v=bGKX14gmNFo" }, exercises: [
-                        { name: "Lateral Lunges", duration: null, reps: "3 x 10 each", note: "Step wide, keep chest up" },
-                        { name: "Shoulder Press", duration: null, reps: "3 x 10", note: "Light weights" },
-                        { name: "Glute Bridges", duration: null, reps: "3 x 15", note: "Squeeze at the top" },
-                        { name: "Seated Rows", duration: null, reps: "3 x 12", note: "Resistance band" },
-                        { name: "Kegels", duration: "5 min", reps: null, note: "Hold 5 sec, release 5 sec" }
+                    { day: "Friday", title: "Full Body", dur: "25 min", yt: { title: "Full Body Prenatal Workout", url: "https://www.youtube.com/watch?v=bGKX14gmNFo" }, exercises: [
+                        { name: "Lateral Lunges", reps: "3x10 each", note: "Wide step, chest up" },
+                        { name: "Shoulder Press", reps: "3x10", note: "Light weights" },
+                        { name: "Glute Bridges", reps: "3x15", note: "Squeeze at top" },
+                        { name: "Seated Rows", reps: "3x12", note: "Resistance band" },
+                        { name: "Kegels", dur: "5 min", note: "Hold 5s, release 5s" }
                     ]},
-                    { day: "Saturday", title: "Active Recovery", duration: "20 min", youtube: { title: "Prenatal Stretching Routine", url: "https://www.youtube.com/watch?v=FP39UrHoeVY" }, exercises: [
-                        { name: "Leisurely Walk", duration: "15 min", reps: null, note: "Enjoy nature" },
-                        { name: "Gentle Stretching", duration: "5 min", reps: null, note: "Focus on what feels tight" }
+                    { day: "Saturday", title: "Active Recovery", dur: "20 min", yt: { title: "Prenatal Stretching", url: "https://www.youtube.com/watch?v=FP39UrHoeVY" }, exercises: [
+                        { name: "Leisurely Walk", dur: "15 min", note: "Enjoy nature" },
+                        { name: "Gentle Stretching", dur: "5 min", note: "What feels tight" }
                     ]},
-                    { day: "Sunday", title: "Rest Day", duration: "Self-care", youtube: { title: "Prenatal Meditation & Relaxation", url: "https://www.youtube.com/watch?v=COp7BR_Dvps" }, exercises: [
-                        { name: "Meditation", duration: "10 min", reps: null, note: "Connect with baby" },
-                        { name: "Prenatal Breathing", duration: "5 min", reps: null, note: "Deep belly breaths" },
-                        { name: "Gentle Walk (Optional)", duration: "10 min", reps: null, note: "Only if you feel up to it" }
+                    { day: "Sunday", title: "Rest & Restore", dur: "Self-care", yt: { title: "Prenatal Meditation", url: "https://www.youtube.com/watch?v=COp7BR_Dvps" }, exercises: [
+                        { name: "Meditation", dur: "10 min", note: "Connect with baby" },
+                        { name: "Breathing Exercises", dur: "5 min", note: "Deep belly breaths" },
+                        { name: "Gentle Walk", dur: "10 min", note: "Optional" }
                     ]}
                 ]
             },
             2: {
-                name: "Second Trimester Fitness",
-                note: "Your energy is back! This is the golden trimester for staying active.",
+                name: "Second Trimester",
+                note: "Energy is back! The golden trimester for staying active.",
                 days: [
-                    { day: "Monday", title: "Cardio & Core", duration: "30 min", youtube: { title: "Second Trimester Workout", url: "https://www.youtube.com/watch?v=GQwL9LWJRME" }, exercises: [
-                        { name: "Brisk Walking / Elliptical", duration: "20 min", reps: null, note: "Moderate intensity" },
-                        { name: "Side Planks (Modified)", duration: null, reps: "3 x 20 sec each", note: "Knees down for support" },
-                        { name: "Standing Oblique Crunches", duration: null, reps: "3 x 12 each", note: "Elbow to knee" },
-                        { name: "Pelvic Floor Exercises", duration: "5 min", reps: null, note: "Kegels and deep breathing" }
+                    { day: "Monday", title: "Cardio & Core", dur: "30 min", yt: { title: "Second Trimester Workout", url: "https://www.youtube.com/watch?v=GQwL9LWJRME" }, exercises: [
+                        { name: "Brisk Walking", dur: "20 min", note: "Moderate intensity" },
+                        { name: "Modified Side Planks", reps: "3x20s each", note: "Knees down" },
+                        { name: "Standing Oblique Crunches", reps: "3x12 each", note: "Elbow to knee" },
+                        { name: "Pelvic Floor Work", dur: "5 min", note: "Kegels + breathing" }
                     ]},
-                    { day: "Tuesday", title: "Upper Body Strength", duration: "25 min", youtube: { title: "Prenatal Upper Body Workout", url: "https://www.youtube.com/watch?v=K09sCiNEXOQ" }, exercises: [
-                        { name: "Incline Push-ups", duration: null, reps: "3 x 10", note: "Use a bench or wall" },
-                        { name: "Lateral Raises", duration: null, reps: "3 x 12", note: "Light dumbbells" },
-                        { name: "Tricep Dips (Chair)", duration: null, reps: "3 x 10", note: "Modify as needed" },
-                        { name: "Resistance Band Pulls", duration: null, reps: "3 x 12", note: "Seated or standing" },
-                        { name: "Wrist & Forearm Stretches", duration: "3 min", reps: null, note: "Prevent carpal tunnel" }
+                    { day: "Tuesday", title: "Upper Body", dur: "25 min", yt: { title: "Prenatal Upper Body", url: "https://www.youtube.com/watch?v=K09sCiNEXOQ" }, exercises: [
+                        { name: "Incline Push-ups", reps: "3x10", note: "Bench or wall" },
+                        { name: "Lateral Raises", reps: "3x12", note: "Light dumbbells" },
+                        { name: "Tricep Dips", reps: "3x10", note: "Chair-supported" },
+                        { name: "Resistance Band Pulls", reps: "3x12", note: "Seated or standing" }
                     ]},
-                    { day: "Wednesday", title: "Prenatal Yoga Flow", duration: "35 min", youtube: { title: "Prenatal Yoga Flow", url: "https://www.youtube.com/watch?v=B05CaFYFMsQ" }, exercises: [
-                        { name: "Sun Salutation (Modified)", duration: "10 min", reps: null, note: "Skip deep twists" },
-                        { name: "Goddess Pose", duration: "2 min", reps: null, note: "Open hips wide" },
-                        { name: "Pigeon Pose", duration: "2 min each side", reps: null, note: "Hip opener" },
-                        { name: "Supported Bridge", duration: "3 min", reps: null, note: "Use a block" },
-                        { name: "Side-Lying Savasana", duration: "5 min", reps: null, note: "Left side preferred" }
+                    { day: "Wednesday", title: "Yoga Flow", dur: "35 min", yt: { title: "Prenatal Yoga", url: "https://www.youtube.com/watch?v=B05CaFYFMsQ" }, exercises: [
+                        { name: "Modified Sun Salutation", dur: "10 min", note: "Skip deep twists" },
+                        { name: "Goddess Pose", dur: "2 min", note: "Open hips wide" },
+                        { name: "Pigeon Pose", dur: "2 min each", note: "Hip opener" },
+                        { name: "Supported Bridge", dur: "3 min", note: "Use a block" },
+                        { name: "Side-Lying Savasana", dur: "5 min", note: "Left side" }
                     ]},
-                    { day: "Thursday", title: "Lower Body Power", duration: "30 min", youtube: { title: "Prenatal Lower Body Workout", url: "https://www.youtube.com/watch?v=bwB86MSGj-Q" }, exercises: [
-                        { name: "Sumo Squats", duration: null, reps: "3 x 12", note: "Wide stance, toes out" },
-                        { name: "Step-Ups", duration: null, reps: "3 x 10 each", note: "Use a low step" },
-                        { name: "Calf Raises", duration: null, reps: "3 x 15", note: "Hold a wall for balance" },
-                        { name: "Side-Lying Leg Lifts", duration: null, reps: "3 x 12 each", note: "Inner and outer thigh" },
-                        { name: "Hip Circles", duration: "3 min", reps: null, note: "On hands and knees" }
+                    { day: "Thursday", title: "Lower Body", dur: "30 min", yt: { title: "Prenatal Lower Body", url: "https://www.youtube.com/watch?v=bwB86MSGj-Q" }, exercises: [
+                        { name: "Sumo Squats", reps: "3x12", note: "Wide stance" },
+                        { name: "Step-Ups", reps: "3x10 each", note: "Low step" },
+                        { name: "Calf Raises", reps: "3x15", note: "Wall for balance" },
+                        { name: "Side-Lying Leg Lifts", reps: "3x12 each", note: "Inner & outer thigh" }
                     ]},
-                    { day: "Friday", title: "Swim & Stretch", duration: "30 min", youtube: { title: "Prenatal Swimming Exercises", url: "https://www.youtube.com/watch?v=DQxkSn5GQRY" }, exercises: [
-                        { name: "Swimming Laps", duration: "20 min", reps: null, note: "Freestyle or backstroke" },
-                        { name: "Water Squats", duration: null, reps: "3 x 15", note: "In the pool" },
-                        { name: "Pool Stretching", duration: "10 min", reps: null, note: "Weightless stretching!" }
+                    { day: "Friday", title: "Swim & Stretch", dur: "30 min", yt: { title: "Prenatal Swimming", url: "https://www.youtube.com/watch?v=DQxkSn5GQRY" }, exercises: [
+                        { name: "Swimming Laps", dur: "20 min", note: "Freestyle or backstroke" },
+                        { name: "Water Squats", reps: "3x15", note: "In the pool" },
+                        { name: "Pool Stretching", dur: "10 min", note: "Weightless stretching" }
                     ]},
-                    { day: "Saturday", title: "Active Fun", duration: "30 min", youtube: { title: "Prenatal Dance Workout", url: "https://www.youtube.com/watch?v=FP39UrHoeVY" }, exercises: [
-                        { name: "Prenatal Dance Class", duration: "20 min", reps: null, note: "Or dance at home!" },
-                        { name: "Stretching", duration: "10 min", reps: null, note: "Full body cool down" }
+                    { day: "Saturday", title: "Active Fun", dur: "30 min", yt: { title: "Prenatal Dance", url: "https://www.youtube.com/watch?v=FP39UrHoeVY" }, exercises: [
+                        { name: "Dance or Prenatal Class", dur: "20 min", note: "Have fun!" },
+                        { name: "Stretching", dur: "10 min", note: "Full body cool down" }
                     ]},
-                    { day: "Sunday", title: "Mindful Rest", duration: "Self-care", youtube: { title: "Prenatal Meditation", url: "https://www.youtube.com/watch?v=COp7BR_Dvps" }, exercises: [
-                        { name: "Prenatal Meditation", duration: "15 min", reps: null, note: "Visualize meeting baby" },
-                        { name: "Gentle Walk", duration: "15 min", reps: null, note: "Fresh air and sunshine" },
-                        { name: "Journaling", duration: "10 min", reps: null, note: "Write a letter to baby" }
+                    { day: "Sunday", title: "Mindful Rest", dur: "Self-care", yt: { title: "Prenatal Meditation", url: "https://www.youtube.com/watch?v=COp7BR_Dvps" }, exercises: [
+                        { name: "Meditation", dur: "15 min", note: "Visualize meeting baby" },
+                        { name: "Gentle Walk", dur: "15 min", note: "Fresh air" },
+                        { name: "Journaling", dur: "10 min", note: "Write to baby" }
                     ]}
                 ]
             },
             3: {
-                name: "Third Trimester Fitness",
-                note: "Focus on comfort, flexibility, and birth preparation. Modify as your belly grows!",
+                name: "Third Trimester",
+                note: "Focus on comfort, flexibility, and birth preparation.",
                 days: [
-                    { day: "Monday", title: "Gentle Cardio", duration: "20 min", youtube: { title: "Third Trimester Gentle Workout", url: "https://www.youtube.com/watch?v=FcEpHr1U1yg" }, exercises: [
-                        { name: "Walking", duration: "15 min", reps: null, note: "Slow and steady" },
-                        { name: "Seated Arm Exercises", duration: "5 min", reps: null, note: "Light weights or bands" }
+                    { day: "Monday", title: "Gentle Cardio", dur: "20 min", yt: { title: "Third Trimester Workout", url: "https://www.youtube.com/watch?v=FcEpHr1U1yg" }, exercises: [
+                        { name: "Walking", dur: "15 min", note: "Slow and steady" },
+                        { name: "Seated Arm Exercises", dur: "5 min", note: "Light weights" }
                     ]},
-                    { day: "Tuesday", title: "Birth Prep Strength", duration: "25 min", youtube: { title: "Birth Preparation Exercises", url: "https://www.youtube.com/watch?v=jWYUKrR1GEo" }, exercises: [
-                        { name: "Deep Squats (Supported)", duration: null, reps: "3 x 10", note: "Hold onto chair" },
-                        { name: "Pelvic Floor Exercises", duration: "5 min", reps: null, note: "Kegels + relaxation" },
-                        { name: "Cat-Cow", duration: "3 min", reps: null, note: "Relieve back pressure" },
-                        { name: "Wall Sit", duration: null, reps: "3 x 20 sec", note: "Build leg endurance" },
-                        { name: "Perineal Massage Education", duration: "5 min", reps: null, note: "Start at 34 weeks" }
+                    { day: "Tuesday", title: "Birth Prep", dur: "25 min", yt: { title: "Birth Prep Exercises", url: "https://www.youtube.com/watch?v=jWYUKrR1GEo" }, exercises: [
+                        { name: "Supported Deep Squats", reps: "3x10", note: "Hold chair" },
+                        { name: "Pelvic Floor Work", dur: "5 min", note: "Kegels + relaxation" },
+                        { name: "Cat-Cow", dur: "3 min", note: "Back relief" },
+                        { name: "Wall Sit", reps: "3x20s", note: "Leg endurance" }
                     ]},
-                    { day: "Wednesday", title: "Gentle Yoga", duration: "25 min", youtube: { title: "Third Trimester Prenatal Yoga", url: "https://www.youtube.com/watch?v=_6F1saIqpqI" }, exercises: [
-                        { name: "Child's Pose (Wide Knees)", duration: "3 min", reps: null, note: "Make room for belly" },
-                        { name: "Butterfly Stretch", duration: "3 min", reps: null, note: "Open the hips" },
-                        { name: "Supported Side Angle", duration: "2 min each", reps: null, note: "Use blocks" },
-                        { name: "Legs Up the Wall", duration: "5 min", reps: null, note: "Reduce swelling" },
-                        { name: "Labor Breathing Practice", duration: "5 min", reps: null, note: "Slow, deep breaths" }
+                    { day: "Wednesday", title: "Gentle Yoga", dur: "25 min", yt: { title: "Third Trimester Yoga", url: "https://www.youtube.com/watch?v=_6F1saIqpqI" }, exercises: [
+                        { name: "Child's Pose", dur: "3 min", note: "Wide knees" },
+                        { name: "Butterfly Stretch", dur: "3 min", note: "Open hips" },
+                        { name: "Legs Up the Wall", dur: "5 min", note: "Reduce swelling" },
+                        { name: "Labor Breathing", dur: "5 min", note: "Slow, deep breaths" }
                     ]},
-                    { day: "Thursday", title: "Light Movement", duration: "20 min", youtube: { title: "Low Impact Third Trimester", url: "https://www.youtube.com/watch?v=jNmHiI8VmCc" }, exercises: [
-                        { name: "Stationary Bike", duration: "15 min", reps: null, note: "Low resistance" },
-                        { name: "Gentle Stretching", duration: "5 min", reps: null, note: "Focus on lower back" }
+                    { day: "Thursday", title: "Light Movement", dur: "20 min", yt: { title: "Low Impact Prenatal", url: "https://www.youtube.com/watch?v=jNmHiI8VmCc" }, exercises: [
+                        { name: "Stationary Bike", dur: "15 min", note: "Low resistance" },
+                        { name: "Gentle Stretching", dur: "5 min", note: "Lower back focus" }
                     ]},
-                    { day: "Friday", title: "Ball Exercises", duration: "25 min", youtube: { title: "Birth Ball Exercises", url: "https://www.youtube.com/watch?v=oLsSI2BFWIY" }, exercises: [
-                        { name: "Ball Bouncing", duration: "5 min", reps: null, note: "Birthing ball" },
-                        { name: "Ball Hip Circles", duration: "5 min", reps: null, note: "Both directions" },
-                        { name: "Ball Lean & Stretch", duration: "5 min", reps: null, note: "Drape over ball" },
-                        { name: "Rocking on All Fours", duration: "5 min", reps: null, note: "Optimal baby positioning" },
-                        { name: "Ball Supported Squats", duration: null, reps: "3 x 10", note: "Ball against wall" }
+                    { day: "Friday", title: "Ball Exercises", dur: "25 min", yt: { title: "Birth Ball Exercises", url: "https://www.youtube.com/watch?v=oLsSI2BFWIY" }, exercises: [
+                        { name: "Ball Bouncing", dur: "5 min", note: "Birthing ball" },
+                        { name: "Ball Hip Circles", dur: "5 min", note: "Both directions" },
+                        { name: "Ball Lean & Stretch", dur: "5 min", note: "Drape over ball" },
+                        { name: "Rocking on All Fours", dur: "5 min", note: "Baby positioning" },
+                        { name: "Ball Supported Squats", reps: "3x10", note: "Ball against wall" }
                     ]},
-                    { day: "Saturday", title: "Water Therapy", duration: "25 min", youtube: { title: "Pool Exercises for Pregnancy", url: "https://www.youtube.com/watch?v=DQxkSn5GQRY" }, exercises: [
-                        { name: "Pool Walking", duration: "15 min", reps: null, note: "Weightless relief!" },
-                        { name: "Water Stretches", duration: "10 min", reps: null, note: "Enjoy the buoyancy" }
+                    { day: "Saturday", title: "Water Therapy", dur: "25 min", yt: { title: "Pool Exercises", url: "https://www.youtube.com/watch?v=DQxkSn5GQRY" }, exercises: [
+                        { name: "Pool Walking", dur: "15 min", note: "Weightless relief" },
+                        { name: "Water Stretches", dur: "10 min", note: "Enjoy buoyancy" }
                     ]},
-                    { day: "Sunday", title: "Rest & Bond", duration: "Self-care", youtube: { title: "Prenatal Relaxation & Visualization", url: "https://www.youtube.com/watch?v=COp7BR_Dvps" }, exercises: [
-                        { name: "Meditation & Visualization", duration: "15 min", reps: null, note: "Visualize labor & birth" },
-                        { name: "Partner Massage", duration: "15 min", reps: null, note: "Lower back & feet" },
-                        { name: "Nesting Activities", duration: "As desired", reps: null, note: "Prepare baby's space" }
+                    { day: "Sunday", title: "Rest & Bond", dur: "Self-care", yt: { title: "Prenatal Relaxation", url: "https://www.youtube.com/watch?v=COp7BR_Dvps" }, exercises: [
+                        { name: "Meditation", dur: "15 min", note: "Visualize birth" },
+                        { name: "Partner Massage", dur: "15 min", note: "Lower back & feet" },
+                        { name: "Nesting", dur: "As desired", note: "Prepare baby's space" }
                     ]}
                 ]
             }
         };
 
-        // ─── HELPER: Calculate week from due date ─────────────────────
-        function calcWeekFromDueDate(dueDateStr) {
+        // ─── HELPERS ──────────────────────────────────────────────────
+        function calcWeek(dueDateStr) {
             if (!dueDateStr) return null;
             const due = new Date(dueDateStr + 'T00:00:00');
             const now = new Date();
-            const totalDays = 280;
-            const daysLeft = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
-            const daysPregnant = totalDays - daysLeft;
-            const week = Math.floor(daysPregnant / 7) + 1;
+            const daysLeft = Math.ceil((due - now) / 86400000);
+            const week = Math.floor((280 - daysLeft) / 7) + 1;
             return Math.max(1, Math.min(40, week));
         }
-
-        function calcDueDateFromLMP(lmpStr) {
+        function lmpToDue(lmpStr) {
             if (!lmpStr) return null;
-            const lmp = new Date(lmpStr + 'T00:00:00');
-            const due = new Date(lmp.getTime() + 280 * 24 * 60 * 60 * 1000);
-            return due.toISOString().split('T')[0];
+            const d = new Date(lmpStr + 'T00:00:00');
+            d.setDate(d.getDate() + 280);
+            return d.toISOString().split('T')[0];
         }
 
-        // ─── WATERCOLOR FRUIT SVG ─────────────────────────────────────
-        function WatercolorFruit({ fruit, size, color, fruitEmoji }) {
-            const sizeNum = parseFloat(size);
-            const displaySize = Math.min(40 + sizeNum * 2.5, 160);
+        // ─── ONBOARDING ──────────────────────────────────────────────
+        function Onboarding({ onComplete }) {
+            const [mode, setMode] = useState(null);
+            const [val, setVal] = useState('');
+            const submit = () => {
+                if (!val) return;
+                const due = mode === 'lmp' ? lmpToDue(val) : val;
+                localStorage.setItem('eb-due', due);
+                onComplete(due);
+            };
             return (
-                <div className="relative flex items-center justify-center" style={{ width: displaySize + 40, height: displaySize + 40 }}>
-                    <svg width={displaySize + 40} height={displaySize + 40} viewBox="0 0 200 200">
-                        <defs>
-                            <filter id={`wc-${fruit.replace(/\s/g,'')}`}>
-                                <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="5" result="turbulence" seed={fruit.length * 7}/>
-                                <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="12" xChannelSelector="R" yChannelSelector="G"/>
-                            </filter>
-                            <radialGradient id={`grad-${fruit.replace(/\s/g,'')}`} cx="40%" cy="40%">
-                                <stop offset="0%" stopColor={color} stopOpacity="0.9"/>
-                                <stop offset="60%" stopColor={color} stopOpacity="0.5"/>
-                                <stop offset="100%" stopColor={color} stopOpacity="0.15"/>
-                            </radialGradient>
-                        </defs>
-                        <circle cx="100" cy="100" r="80" fill={`url(#grad-${fruit.replace(/\s/g,'')})`} filter={`url(#wc-${fruit.replace(/\s/g,'')})`} />
-                        <circle cx="100" cy="100" r="60" fill={color} opacity="0.2" filter={`url(#wc-${fruit.replace(/\s/g,'')})`} />
-                    </svg>
-                    <span className="absolute text-center animate-float" style={{ fontSize: Math.min(displaySize * 0.5, 70) }}>
-                        {fruitEmoji}
-                    </span>
-                </div>
-            );
-        }
+                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                    <div className="animate-up" style={{ maxWidth: 420, width: '100%', textAlign: 'center' }}>
+                        <div style={{ fontSize: 48, marginBottom: 16 }}>✿</div>
+                        <h1 className="font-serif" style={{ fontSize: 42, fontWeight: 300, lineHeight: 1.1, marginBottom: 8, color: '#2C2C2C' }}>
+                            Expecting<br/><em>Better</em>
+                        </h1>
+                        <p style={{ fontSize: 14, color: '#8A8580', marginBottom: 40, letterSpacing: '0.02em' }}>Your pregnancy companion</p>
 
-        function TrimesterBadge({ trimester }) {
-            const colors = { 1: "from-pink-300 to-rose-400", 2: "from-amber-300 to-orange-400", 3: "from-purple-300 to-indigo-400" };
-            const labels = { 1: "First Trimester", 2: "Second Trimester", 3: "Third Trimester" };
-            return (
-                <span className={`inline-block px-3 py-1 rounded-full text-white text-xs font-medium bg-gradient-to-r ${colors[trimester]}`}>
-                    {labels[trimester]}
-                </span>
-            );
-        }
+                        {!mode && (
+                            <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                <button onClick={() => setMode('due')} className="card" style={{ padding: '20px 24px', textAlign: 'left', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.08)' }}>
+                                    <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>I know my due date</p>
+                                    <p style={{ fontSize: 13, color: '#8A8580' }}>Enter your estimated due date</p>
+                                </button>
+                                <button onClick={() => setMode('lmp')} className="card" style={{ padding: '20px 24px', textAlign: 'left', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.08)' }}>
+                                    <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>I know my last period date</p>
+                                    <p style={{ fontSize: 13, color: '#8A8580' }}>We'll calculate your due date</p>
+                                </button>
+                            </div>
+                        )}
 
-        function ProgressRing({ week, totalWeeks = 40 }) {
-            const radius = 54;
-            const circumference = 2 * Math.PI * radius;
-            const progress = (week / totalWeeks) * circumference;
-            const percentage = Math.round((week / totalWeeks) * 100);
-            return (
-                <div className="relative inline-flex items-center justify-center">
-                    <svg width="130" height="130" viewBox="0 0 130 130">
-                        <circle cx="65" cy="65" r={radius} fill="none" stroke="#F3E8FF" strokeWidth="8"/>
-                        <circle cx="65" cy="65" r={radius} fill="none" stroke="url(#ring-gradient)" strokeWidth="8"
-                            strokeDasharray={circumference} strokeDashoffset={circumference - progress}
-                            strokeLinecap="round" transform="rotate(-90 65 65)" className="progress-ring"/>
-                        <defs>
-                            <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#F9A8D4"/>
-                                <stop offset="100%" stopColor="#C4B5FD"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                    <div className="absolute text-center">
-                        <div className="text-2xl font-bold font-display bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">{percentage}%</div>
-                        <div className="text-[10px] text-gray-400">complete</div>
+                        {mode && (
+                            <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <p style={{ fontSize: 14, color: '#5A5550' }}>
+                                    {mode === 'due' ? 'When is your due date?' : 'First day of your last period?'}
+                                </p>
+                                <input type="date" value={val} onChange={e => setVal(e.target.value)} style={{ textAlign: 'center', fontSize: 16 }} />
+                                {mode === 'lmp' && val && (
+                                    <p style={{ fontSize: 13, color: '#8A8580' }}>
+                                        Estimated due date: {new Date(lmpToDue(val) + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                    </p>
+                                )}
+                                <div style={{ display: 'flex', gap: 12 }}>
+                                    <button onClick={() => { setMode(null); setVal(''); }} className="btn-outline" style={{ flex: 1 }}>Back</button>
+                                    <button onClick={submit} disabled={!val} className="btn-primary" style={{ flex: 1 }}>Begin</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
@@ -412,314 +780,168 @@
 
         // ─── WATER TRACKER ────────────────────────────────────────────
         function WaterTracker() {
-            const [glasses, setGlasses] = useState(() => {
-                const saved = localStorage.getItem('bloom-water-' + new Date().toDateString());
-                return saved ? parseInt(saved) : 0;
+            const [g, setG] = useState(() => {
+                const s = localStorage.getItem('eb-water-' + new Date().toDateString());
+                return s ? parseInt(s) : 0;
             });
-            useEffect(() => { localStorage.setItem('bloom-water-' + new Date().toDateString(), glasses); }, [glasses]);
+            useEffect(() => { localStorage.setItem('eb-water-' + new Date().toDateString(), g); }, [g]);
             return (
-                <div className="flex flex-wrap gap-2 items-center">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                     {Array.from({ length: 10 }).map((_, i) => (
-                        <button key={i} onClick={() => setGlasses(i + 1)}
-                            className={`w-8 h-10 rounded-lg transition-all text-lg ${i < glasses ? 'bg-blue-100 scale-105' : 'bg-gray-50 opacity-40'}`}>
-                            {i < glasses ? '💧' : '○'}
+                        <button key={i} onClick={() => setG(i + 1)}
+                            style={{ width: 32, height: 36, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 16,
+                                background: i < g ? '#D5E3F0' : '#EDEAE5', transition: 'all 0.2s',
+                                transform: i < g ? 'scale(1.05)' : 'scale(1)' }}>
+                            {i < g ? '💧' : '·'}
                         </button>
                     ))}
-                    <span className="text-xs text-gray-400 ml-2">{glasses}/10</span>
-                </div>
-            );
-        }
-
-        // ─── ONBOARDING SCREEN ────────────────────────────────────────
-        function OnboardingScreen({ onComplete }) {
-            const [mode, setMode] = useState(null);
-            const [dateValue, setDateValue] = useState('');
-
-            const handleSubmit = () => {
-                if (!dateValue) return;
-                let dueDate = dateValue;
-                if (mode === 'lmp') {
-                    dueDate = calcDueDateFromLMP(dateValue);
-                }
-                localStorage.setItem('bloom-due-date', dueDate);
-                onComplete(dueDate);
-            };
-
-            return (
-                <div className="min-h-screen flex items-center justify-center p-4">
-                    <div className="watercolor-card rounded-3xl p-8 max-w-md w-full text-center animate-fade-in">
-                        <div className="text-6xl mb-4 animate-float">🌸</div>
-                        <h1 className="text-4xl font-display font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-pink-300 bg-clip-text text-transparent mb-2">
-                            Welcome to Bloom
-                        </h1>
-                        <p className="text-gray-500 font-hand text-xl mb-8">Your pregnancy journey starts here</p>
-
-                        {!mode && (
-                            <div className="space-y-3">
-                                <p className="text-sm text-gray-600 mb-4">How would you like to get started?</p>
-                                <button onClick={() => setMode('due')}
-                                    className="w-full p-4 rounded-2xl watercolor-card hover:shadow-lg transition-all text-left">
-                                    <p className="font-semibold text-sm">I know my due date</p>
-                                    <p className="text-xs text-gray-400 mt-1">Enter your estimated due date</p>
-                                </button>
-                                <button onClick={() => setMode('lmp')}
-                                    className="w-full p-4 rounded-2xl watercolor-card hover:shadow-lg transition-all text-left">
-                                    <p className="font-semibold text-sm">I know my last period date</p>
-                                    <p className="text-xs text-gray-400 mt-1">We'll calculate your due date (LMP + 280 days)</p>
-                                </button>
-                            </div>
-                        )}
-
-                        {mode && (
-                            <div className="space-y-4 animate-fade-in">
-                                <p className="text-sm text-gray-600">
-                                    {mode === 'due' ? 'When is your due date?' : 'When was the first day of your last period?'}
-                                </p>
-                                <input type="date" value={dateValue} onChange={e => setDateValue(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl border border-pink-200 bg-white/80 text-center text-lg focus:outline-none focus:ring-2 focus:ring-pink-300" />
-                                {mode === 'lmp' && dateValue && (
-                                    <p className="text-xs text-purple-500">
-                                        Estimated due date: {new Date(calcDueDateFromLMP(dateValue)).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                    </p>
-                                )}
-                                <div className="flex gap-3">
-                                    <button onClick={() => { setMode(null); setDateValue(''); }}
-                                        className="flex-1 px-4 py-2 rounded-full border border-pink-200 text-sm text-gray-500 hover:bg-pink-50 transition-all">
-                                        Back
-                                    </button>
-                                    <button onClick={handleSubmit} disabled={!dateValue}
-                                        className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-pink-400 to-purple-400 text-white font-medium hover:shadow-lg transition-all disabled:opacity-40">
-                                        Start My Journey
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <span style={{ fontSize: 12, color: '#8A8580', marginLeft: 4 }}>{g}/10</span>
                 </div>
             );
         }
 
         // ─── MAIN APP ─────────────────────────────────────────────────
         function App() {
-            const [dueDateInput, setDueDateInput] = useState(() => localStorage.getItem('bloom-due-date') || '');
-            const [hasOnboarded, setHasOnboarded] = useState(() => !!localStorage.getItem('bloom-due-date'));
-            const [activeTab, setActiveTab] = useState('overview');
-            const [selectedDay, setSelectedDay] = useState(new Date().getDay());
-            const [completedWorkouts, setCompletedWorkouts] = useState(() => {
-                const saved = localStorage.getItem('bloom-completed-workouts');
-                return saved ? JSON.parse(saved) : {};
-            });
-            const [showSettings, setShowSettings] = useState(false);
-            const [expandedMeal, setExpandedMeal] = useState(null);
-            const [journalEntries, setJournalEntries] = useState(() => {
-                const saved = localStorage.getItem('bloom-journal');
-                return saved ? JSON.parse(saved) : {};
-            });
-            const [currentJournal, setCurrentJournal] = useState('');
-            const [checkedTests, setCheckedTests] = useState(() => {
-                const saved = localStorage.getItem('bloom-checked-tests');
-                return saved ? JSON.parse(saved) : {};
-            });
-            const [appointmentDetails, setAppointmentDetails] = useState(() => {
-                const saved = localStorage.getItem('bloom-appointments');
-                return saved ? JSON.parse(saved) : {};
-            });
-            const [editingAppt, setEditingAppt] = useState(null);
+            const [due, setDue] = useState(() => localStorage.getItem('eb-due') || '');
+            const [boarded, setBoarded] = useState(() => !!localStorage.getItem('eb-due'));
+            const [tab, setTab] = useState('home');
+            const [selDay, setSelDay] = useState(new Date().getDay());
+            const [doneEx, setDoneEx] = useState(() => { const s = localStorage.getItem('eb-done'); return s ? JSON.parse(s) : {}; });
+            const [settings, setSettings] = useState(false);
+            const [expandMeal, setExpandMeal] = useState(null);
+            const [journal, setJournal] = useState(() => { const s = localStorage.getItem('eb-journal'); return s ? JSON.parse(s) : {}; });
+            const [jText, setJText] = useState('');
+            const [checks, setChecks] = useState(() => { const s = localStorage.getItem('eb-checks'); return s ? JSON.parse(s) : {}; });
+            const [appts, setAppts] = useState(() => { const s = localStorage.getItem('eb-appts'); return s ? JSON.parse(s) : {}; });
+            const [editAppt, setEditAppt] = useState(null);
 
-            const currentWeek = useMemo(() => calcWeekFromDueDate(dueDateInput) || 8, [dueDateInput]);
-            const weekData = WEEK_DATA[currentWeek - 1] || WEEK_DATA[0];
-            const trimester = weekData.trimester;
-            const nutritionFocus = TRIMESTER_NUTRITION_FOCUS[trimester];
-            const workoutPlan = WORKOUT_PLANS[trimester];
-            const mealPlan = MEAL_PLANS[trimester];
+            const week = useMemo(() => calcWeek(due) || 8, [due]);
+            const wd = WEEK_DATA[week - 1] || WEEK_DATA[0];
+            const tri = wd.tri;
+            const nf = NUTRITION_FOCUS[tri];
+            const wp = WORKOUTS[tri];
+            const mp = MEALS[tri];
 
-            useEffect(() => { localStorage.setItem('bloom-completed-workouts', JSON.stringify(completedWorkouts)); }, [completedWorkouts]);
-            useEffect(() => { localStorage.setItem('bloom-due-date', dueDateInput); }, [dueDateInput]);
-            useEffect(() => { localStorage.setItem('bloom-journal', JSON.stringify(journalEntries)); }, [journalEntries]);
-            useEffect(() => { localStorage.setItem('bloom-checked-tests', JSON.stringify(checkedTests)); }, [checkedTests]);
-            useEffect(() => { localStorage.setItem('bloom-appointments', JSON.stringify(appointmentDetails)); }, [appointmentDetails]);
+            useEffect(() => { localStorage.setItem('eb-done', JSON.stringify(doneEx)); }, [doneEx]);
+            useEffect(() => { localStorage.setItem('eb-due', due); }, [due]);
+            useEffect(() => { localStorage.setItem('eb-journal', JSON.stringify(journal)); }, [journal]);
+            useEffect(() => { localStorage.setItem('eb-checks', JSON.stringify(checks)); }, [checks]);
+            useEffect(() => { localStorage.setItem('eb-appts', JSON.stringify(appts)); }, [appts]);
 
-            const toggleWorkout = (dayIdx, exIdx) => {
-                const key = `${currentWeek}-${dayIdx}-${exIdx}`;
-                setCompletedWorkouts(prev => ({ ...prev, [key]: !prev[key] }));
-            };
+            const toggleEx = (d, i) => { const k = `${week}-${d}-${i}`; setDoneEx(p => ({ ...p, [k]: !p[k] })); };
+            const toggleCheck = (w, i) => { const k = `${w}-${i}`; setChecks(p => ({ ...p, [k]: !p[k] })); };
+            const saveJ = () => { if (jText.trim()) { setJournal(p => ({ ...p, [week]: [...(p[week]||[]), { text: jText, date: new Date().toLocaleDateString() }] })); setJText(''); } };
+            const updateAppt = (w, f, v) => { setAppts(p => ({ ...p, [w]: { ...(p[w]||{}), [f]: v } })); };
 
-            const toggleTest = (weekNum, testIdx) => {
-                const key = `${weekNum}-${testIdx}`;
-                setCheckedTests(prev => ({ ...prev, [key]: !prev[key] }));
-            };
+            const daysLeft = useMemo(() => {
+                if (!due) return null;
+                const d = Math.ceil((new Date(due+'T00:00:00') - new Date()) / 86400000);
+                return d > 0 ? d : 0;
+            }, [due]);
 
-            const saveJournal = () => {
-                if (currentJournal.trim()) {
-                    setJournalEntries(prev => ({
-                        ...prev,
-                        [currentWeek]: [...(prev[currentWeek] || []), { text: currentJournal, date: new Date().toLocaleDateString() }]
-                    }));
-                    setCurrentJournal('');
-                }
-            };
+            if (!boarded) return <Onboarding onComplete={d => { setDue(d); setBoarded(true); }} />;
 
-            const updateAppointment = (week, field, value) => {
-                setAppointmentDetails(prev => ({
-                    ...prev,
-                    [week]: { ...(prev[week] || {}), [field]: value }
-                }));
-            };
-
-            const daysUntilDue = useMemo(() => {
-                if (!dueDateInput) return null;
-                const due = new Date(dueDateInput + 'T00:00:00');
-                const now = new Date();
-                const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
-                return diff > 0 ? diff : 0;
-            }, [dueDateInput]);
-
-            const handleOnboardComplete = (dueDate) => {
-                setDueDateInput(dueDate);
-                setHasOnboarded(true);
-            };
-
-            const handleResetDueDate = () => {
-                localStorage.removeItem('bloom-due-date');
-                setDueDateInput('');
-                setHasOnboarded(false);
-            };
-
-            if (!hasOnboarded) {
-                return <OnboardingScreen onComplete={handleOnboardComplete} />;
-            }
-
-            const tabs = [
-                { id: 'overview', label: 'Overview', icon: '🌸' },
-                { id: 'nutrition', label: 'Nutrition', icon: '🥗' },
-                { id: 'workout', label: 'Workout', icon: '🧘' },
-                { id: 'doctor', label: 'Doctor', icon: '🩺' },
-                { id: 'journal', label: 'Journal', icon: '📔' }
-            ];
-            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const pct = Math.round((week / 40) * 100);
+            const triLabel = ['', 'First', 'Second', 'Third'][tri];
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
             return (
-                <div className="min-h-screen pb-24">
+                <div style={{ minHeight: '100vh', paddingBottom: 80 }}>
                     {/* Header */}
-                    <header className="sticky top-0 z-50 backdrop-blur-lg bg-white/70 border-b border-pink-100/50">
-                        <div className="max-w-2xl mx-auto px-4 py-3">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-pink-300 bg-clip-text text-transparent">Bloom</h1>
-                                    <p className="text-xs text-gray-400 font-hand text-lg -mt-1">your pregnancy journey</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {daysUntilDue !== null && (
-                                        <div className="text-right">
-                                            <div className="text-lg font-bold font-display text-purple-400">{daysUntilDue}</div>
-                                            <div className="text-[10px] text-gray-400">days to go</div>
+                    <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(245,240,235,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                        <div style={{ maxWidth: 560, margin: '0 auto', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                                <h1 className="font-serif" style={{ fontSize: 22, fontWeight: 400, letterSpacing: '-0.01em' }}>Expecting <em>Better</em></h1>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                {daysLeft !== null && (
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div className="font-serif" style={{ fontSize: 20, fontWeight: 500 }}>{daysLeft}</div>
+                                        <div style={{ fontSize: 10, color: '#8A8580', textTransform: 'uppercase', letterSpacing: '0.08em' }}>days to go</div>
+                                    </div>
+                                )}
+                                <button onClick={() => setSettings(!settings)} style={{ width: 36, height: 36, borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', background: '#FDFCFA', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    ⚙
+                                </button>
+                            </div>
+                        </div>
+                        {settings && (
+                            <div className="animate-in" style={{ maxWidth: 560, margin: '0 auto', padding: '0 20px 16px' }}>
+                                <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <div>
+                                        <label style={{ fontSize: 11, color: '#8A8580', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, display: 'block' }}>Due Date</label>
+                                        <input type="date" value={due} onChange={e => setDue(e.target.value)} />
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <p style={{ fontSize: 11, color: '#8A8580', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Current Week</p>
+                                            <p style={{ fontSize: 15, fontWeight: 500 }}>Week {week} of 40</p>
                                         </div>
-                                    )}
-                                    <button onClick={() => setShowSettings(!showSettings)}
-                                        className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center hover:shadow-md transition-all">
-                                        ⚙️
-                                    </button>
+                                        <button onClick={() => { localStorage.removeItem('eb-due'); setDue(''); setBoarded(false); }}
+                                            style={{ fontSize: 12, color: '#C4796E', padding: '6px 14px', borderRadius: 100, border: '1px solid #E5C4BF', background: 'transparent', cursor: 'pointer' }}>
+                                            Reset
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-
-                            {showSettings && (
-                                <div className="mt-3 p-4 rounded-2xl watercolor-card animate-fade-in">
-                                    <div className="flex flex-col gap-3">
-                                        <div>
-                                            <label className="text-xs font-medium text-gray-500 mb-1 block">Due Date</label>
-                                            <input type="date" value={dueDateInput} onChange={e => setDueDateInput(e.target.value)}
-                                                className="w-full px-3 py-2 rounded-xl border border-pink-200 bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" />
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-xs font-medium text-gray-500">Auto-calculated Week</p>
-                                                <p className="text-sm font-bold text-purple-500">Week {currentWeek} of 40</p>
-                                            </div>
-                                            <button onClick={handleResetDueDate}
-                                                className="text-xs text-red-400 hover:text-red-600 transition-colors px-3 py-1 rounded-full border border-red-200 hover:bg-red-50">
-                                                Reset
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </header>
 
-                    {/* Week Selector Ribbon */}
-                    <div className="overflow-x-auto scrollbar-hide py-3 px-2 bg-white/30">
-                        <div className="flex gap-1.5 max-w-2xl mx-auto" style={{ width: 'max-content', paddingLeft: '1rem', paddingRight: '1rem' }}>
-                            {WEEK_DATA.map((w) => (
-                                <button key={w.week}
-                                    className={`flex-shrink-0 w-10 h-10 rounded-full text-xs font-medium transition-all cursor-default ${
-                                        currentWeek === w.week
-                                            ? 'bg-gradient-to-br from-pink-400 to-purple-400 text-white shadow-lg scale-110'
-                                            : w.week < currentWeek
-                                                ? 'bg-pink-100 text-pink-500'
-                                                : 'bg-gray-100 text-gray-400'
-                                    }`}>
-                                    {w.week}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Main Content */}
-                    <main className="max-w-2xl mx-auto px-4 py-4">
-                        {/* Tab: Overview */}
-                        {activeTab === 'overview' && (
-                            <div className="animate-fade-in space-y-6">
-                                <div className="watercolor-card rounded-3xl p-6 text-center">
-                                    <TrimesterBadge trimester={trimester} />
-                                    <h2 className="text-3xl font-display font-bold mt-3 mb-1">Week {currentWeek}</h2>
-                                    <p className="text-gray-500 text-sm mb-4">Baby is the size of a <span className="font-semibold text-pink-500">{weekData.fruit}</span></p>
-                                    <div className="flex justify-center mb-4">
-                                        <WatercolorFruit fruit={weekData.fruit} size={weekData.size} color={weekData.color} fruitEmoji={weekData.fruitEmoji} />
-                                    </div>
-                                    <div className="inline-block px-4 py-1.5 rounded-full bg-white/60 text-sm">📏 {weekData.size} long</div>
-                                    <p className="mt-4 text-gray-600 leading-relaxed text-sm">{weekData.dev}</p>
+                    <main style={{ maxWidth: 560, margin: '0 auto', padding: '20px 20px 0' }}>
+                        {/* HOME TAB */}
+                        {tab === 'home' && (
+                            <div className="animate-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                {/* Hero */}
+                                <div style={{ textAlign: 'center', padding: '32px 0 24px' }}>
+                                    <div className="tag" style={{ background: '#EDEAE5', color: '#6B6560', marginBottom: 16 }}>{triLabel} Trimester</div>
+                                    <h2 className="font-serif" style={{ fontSize: 48, fontWeight: 300, lineHeight: 1 }}>Week {week}</h2>
+                                    <p style={{ fontSize: 14, color: '#8A8580', marginTop: 8 }}>
+                                        Baby is the size of a <strong style={{ color: '#2C2C2C' }}>{wd.fruit}</strong>
+                                    </p>
+                                    <div style={{ fontSize: 64, margin: '24px 0 16px' }}>{wd.emoji}</div>
+                                    <div className="tag" style={{ background: '#EDEAE5', color: '#6B6560' }}>📏 {wd.size}</div>
+                                    <p style={{ fontSize: 14, color: '#5A5550', marginTop: 16, lineHeight: 1.6, maxWidth: 360, margin: '16px auto 0' }}>{wd.dev}</p>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="watercolor-card rounded-2xl p-4 text-center">
-                                        <ProgressRing week={currentWeek} />
-                                        <p className="text-xs text-gray-400 mt-2">Progress</p>
+                                {/* Progress */}
+                                <div className="card" style={{ padding: 24 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+                                        <span style={{ fontSize: 13, color: '#8A8580' }}>Progress</span>
+                                        <span style={{ fontSize: 24, fontWeight: 500 }} className="font-serif">{pct}%</span>
                                     </div>
-                                    <div className="watercolor-card rounded-2xl p-4 text-center flex flex-col items-center justify-center">
-                                        <div className="text-3xl font-display font-bold text-purple-400">{40 - currentWeek}</div>
-                                        <p className="text-xs text-gray-400 mt-1">Weeks Left</p>
-                                        <div className="text-lg mt-1">⏳</div>
-                                    </div>
-                                    <div className="watercolor-card rounded-2xl p-4 text-center flex flex-col items-center justify-center">
-                                        <div className="text-3xl font-display font-bold text-pink-400">{currentWeek}</div>
-                                        <p className="text-xs text-gray-400 mt-1">Weeks Done</p>
-                                        <div className="text-lg mt-1">✨</div>
+                                    <div className="progress-track"><div className="progress-fill" style={{ width: pct + '%' }}></div></div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div className="font-serif" style={{ fontSize: 28, fontWeight: 400 }}>{week}</div>
+                                            <div style={{ fontSize: 11, color: '#8A8580', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weeks done</div>
+                                        </div>
+                                        <div style={{ width: 1, background: '#EDEAE5' }}></div>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div className="font-serif" style={{ fontSize: 28, fontWeight: 400 }}>{40 - week}</div>
+                                            <div style={{ fontSize: 11, color: '#8A8580', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weeks left</div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Upcoming Appointments */}
+                                {/* Upcoming */}
                                 {(() => {
-                                    const upcoming = DOCTOR_CHECKPOINTS.filter(c => c.week >= currentWeek).slice(0, 2);
-                                    if (upcoming.length === 0) return null;
+                                    const up = CHECKPOINTS.filter(c => c.week >= week).slice(0, 2);
+                                    if (!up.length) return null;
                                     return (
-                                        <div className="watercolor-card rounded-2xl p-4">
-                                            <h3 className="font-display font-semibold text-lg mb-3">Upcoming Appointments</h3>
-                                            {upcoming.map((apt, i) => {
-                                                const apptData = appointmentDetails[apt.week] || {};
+                                        <div className="card" style={{ padding: 24 }}>
+                                            <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8A8580', marginBottom: 16 }}>Upcoming</h3>
+                                            {up.map((a, i) => {
+                                                const ad = appts[a.week] || {};
                                                 return (
-                                                    <div key={i} className={`flex items-start gap-3 ${i > 0 ? 'mt-3 pt-3 border-t border-pink-100' : ''}`}>
-                                                        <span className="text-2xl">{apt.icon}</span>
-                                                        <div className="flex-1">
-                                                            <p className="font-medium text-sm">{apt.title}</p>
-                                                            <p className="text-xs text-gray-400">
-                                                                Week {apt.week} {apt.week === currentWeek ? '— This week!' : `— In ${apt.week - currentWeek} weeks`}
+                                                    <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', paddingTop: i > 0 ? 14 : 0, marginTop: i > 0 ? 14 : 0, borderTop: i > 0 ? '1px solid #EDEAE5' : 'none' }}>
+                                                        <span style={{ fontSize: 22 }}>{a.icon}</span>
+                                                        <div style={{ flex: 1 }}>
+                                                            <p style={{ fontSize: 14, fontWeight: 500 }}>{a.title}</p>
+                                                            <p style={{ fontSize: 12, color: '#8A8580', marginTop: 2 }}>
+                                                                Week {a.week} {a.week === week ? '— This week' : `— In ${a.week - week} weeks`}
                                                             </p>
-                                                            {apptData.date && (
-                                                                <p className="text-xs text-purple-500 mt-0.5">📅 {new Date(apptData.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                                                            )}
-                                                            {apptData.location && (
-                                                                <p className="text-xs text-pink-500 mt-0.5">📍 {apptData.location}</p>
-                                                            )}
+                                                            {ad.date && <p style={{ fontSize: 12, color: '#6B6560', marginTop: 4 }}>📅 {new Date(ad.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>}
+                                                            {ad.location && <p style={{ fontSize: 12, color: '#6B6560', marginTop: 2 }}>📍 {ad.location}</p>}
                                                         </div>
                                                     </div>
                                                 );
@@ -728,217 +950,159 @@
                                     );
                                 })()}
 
-                                <div className="watercolor-card rounded-2xl p-4">
-                                    <h3 className="font-display font-semibold text-lg mb-2">Today's Nutrition Focus</h3>
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-2xl">🥑</span>
-                                        <div>
-                                            <p className="font-medium text-sm">{nutritionFocus.focus}</p>
-                                            <div className="flex flex-wrap gap-1.5 mt-2">
-                                                {nutritionFocus.nutrients.map((n, i) => (
-                                                    <span key={i} className="px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-xs">{n}</span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="watercolor-card rounded-2xl p-4 cursor-pointer" onClick={() => setActiveTab('workout')}>
-                                    <h3 className="font-display font-semibold text-lg mb-2">Today's Workout</h3>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">🧘</span>
-                                        <div>
-                                            <p className="font-medium text-sm">{workoutPlan.days[new Date().getDay()].title}</p>
-                                            <p className="text-xs text-gray-400">{workoutPlan.days[new Date().getDay()].duration}</p>
-                                        </div>
-                                        <span className="ml-auto text-gray-300">→</span>
-                                    </div>
+                                {/* Quick links */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <button onClick={() => setTab('nutrition')} className="card" style={{ padding: 20, textAlign: 'left', cursor: 'pointer' }}>
+                                        <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8A8580', marginBottom: 8 }}>Nutrition</div>
+                                        <p style={{ fontSize: 14, fontWeight: 500 }}>{nf.focus.split(' ').slice(0, 3).join(' ')}</p>
+                                    </button>
+                                    <button onClick={() => setTab('workout')} className="card" style={{ padding: 20, textAlign: 'left', cursor: 'pointer' }}>
+                                        <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8A8580', marginBottom: 8 }}>Today's Workout</div>
+                                        <p style={{ fontSize: 14, fontWeight: 500 }}>{wp.days[new Date().getDay()].title}</p>
+                                    </button>
                                 </div>
                             </div>
                         )}
 
-                        {/* Tab: Nutrition */}
-                        {activeTab === 'nutrition' && (
-                            <div className="animate-fade-in space-y-5">
-                                <div className="text-center mb-2">
-                                    <h2 className="text-2xl font-display font-bold">Nutrition & Meal Plan</h2>
-                                    <p className="text-sm text-gray-400 mt-1">Week {currentWeek} · {TRIMESTER_NUTRITION_FOCUS[trimester].focus}</p>
+                        {/* NUTRITION TAB */}
+                        {tab === 'nutrition' && (
+                            <div className="animate-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div style={{ textAlign: 'center', paddingTop: 8 }}>
+                                    <h2 className="font-serif" style={{ fontSize: 32, fontWeight: 300 }}>Nutrition</h2>
+                                    <p style={{ fontSize: 13, color: '#8A8580', marginTop: 4 }}>Week {week} · {nf.focus}</p>
                                 </div>
 
-                                <div className="watercolor-card rounded-2xl p-4">
-                                    <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">✅ Key Nutrients This Trimester</h3>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {nutritionFocus.nutrients.map((n, i) => (
-                                            <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-green-50/60">
-                                                <span className="w-2 h-2 rounded-full bg-green-400"></span>
-                                                <span className="text-sm">{n}</span>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <div className="card" style={{ padding: 16 }}>
+                                        <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#8A8580', marginBottom: 10 }}>Key Nutrients</p>
+                                        {nf.nutrients.map((n, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#7BA37B' }}></div>
+                                                <span style={{ fontSize: 13 }}>{n}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="card" style={{ padding: 16 }}>
+                                        <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#8A8580', marginBottom: 10 }}>Avoid</p>
+                                        {nf.avoid.map((a, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#C4796E' }}></div>
+                                                <span style={{ fontSize: 13, color: '#6B6560' }}>{a}</span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="watercolor-card rounded-2xl p-4">
-                                    <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">⚠️ Foods to Avoid</h3>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {nutritionFocus.avoid.map((item, i) => (
-                                            <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-red-50/60">
-                                                <span className="w-2 h-2 rounded-full bg-red-300"></span>
-                                                <span className="text-sm text-red-700">{item}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Day selector */}
-                                <div className="flex gap-2 justify-center">
-                                    {dayNames.map((d, i) => (
-                                        <button key={d} onClick={() => setSelectedDay(i)}
-                                            className={`w-10 h-10 rounded-full text-xs font-medium transition-all ${
-                                                selectedDay === i
-                                                    ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white shadow-md'
-                                                    : 'bg-white/60 text-gray-500 hover:bg-green-50'
-                                            }`}>
+                                {/* Day picker */}
+                                <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                                    {days.map((d, i) => (
+                                        <button key={d} onClick={() => setSelDay(i)}
+                                            className={`pill ${selDay === i ? 'pill-active' : ''}`} style={{ padding: '8px 14px' }}>
                                             {d}
                                         </button>
                                     ))}
                                 </div>
 
-                                {/* Daily Meal Plan */}
+                                {/* Day's meals */}
                                 {(() => {
-                                    const todayMeal = mealPlan[selectedDay];
-                                    if (!todayMeal) return null;
-
-                                    const MealCard = ({ meal, type, emoji, colorClass }) => (
-                                        <div className={`meal-section ${colorClass}`}>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span>{emoji}</span>
-                                                <span className="text-xs font-semibold uppercase text-gray-400">{type}</span>
+                                    const m = mp[selDay];
+                                    if (!m) return null;
+                                    const Section = ({ label, color, items }) => (
+                                        <div style={{ marginBottom: 16 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                                <div className="meal-dot" style={{ background: color }}></div>
+                                                <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8A8580', fontWeight: 500 }}>{label}</span>
                                             </div>
-                                            <div className="watercolor-card rounded-2xl p-4 cursor-pointer"
-                                                onClick={() => setExpandedMeal(expandedMeal === `${selectedDay}-${type}` ? null : `${selectedDay}-${type}`)}>
-                                                <h4 className="font-semibold text-sm">{meal.name}</h4>
-                                                {meal.desc && <p className="text-xs text-gray-500 mt-0.5">{meal.desc}</p>}
-                                                {expandedMeal === `${selectedDay}-${type}` && meal.ingredients && (
-                                                    <div className="mt-3 pt-3 border-t border-pink-100 animate-fade-in">
-                                                        <h5 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Ingredients</h5>
-                                                        <ul className="space-y-0.5 mb-3">
-                                                            {meal.ingredients.map((ing, i) => (
-                                                                <li key={i} className="text-xs flex items-center gap-1.5">
-                                                                    <span className="w-1 h-1 rounded-full bg-pink-300"></span>{ing}
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                        {meal.instructions && (
-                                                            <>
-                                                                <h5 className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Instructions</h5>
-                                                                <p className="text-xs text-gray-600">{meal.instructions}</p>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {!expandedMeal || expandedMeal !== `${selectedDay}-${type}` ? (
-                                                    <p className="text-[10px] text-gray-400 mt-1">Tap for recipe</p>
-                                                ) : null}
-                                            </div>
+                                            {items.map((item, i) => (
+                                                <div key={i} className="card" style={{ padding: 16, marginBottom: 8, cursor: 'default' }}>
+                                                    <p style={{ fontSize: 14, fontWeight: 500 }}>{typeof item === 'string' ? item : item.name}</p>
+                                                    {item.desc && <p style={{ fontSize: 12, color: '#8A8580', marginTop: 3, lineHeight: 1.5 }}>{item.desc}</p>}
+                                                </div>
+                                            ))}
                                         </div>
                                     );
-
                                     return (
-                                        <div className="space-y-3">
-                                            <h3 className="font-display font-semibold text-lg text-center">{todayMeal.day}'s Meal Plan</h3>
-                                            <MealCard meal={todayMeal.breakfast} type="Breakfast" emoji="🌅" colorClass="meal-breakfast" />
-                                            <MealCard meal={todayMeal.lunch} type="Lunch" emoji="☀️" colorClass="meal-lunch" />
-                                            <MealCard meal={todayMeal.dinner} type="Dinner" emoji="🌙" colorClass="meal-dinner" />
-                                            <MealCard meal={todayMeal.snack} type="Snack" emoji="🍎" colorClass="meal-snack" />
+                                        <div>
+                                            <h3 className="font-serif" style={{ fontSize: 22, fontWeight: 400, textAlign: 'center', marginBottom: 20 }}>{m.day}</h3>
+                                            <Section label="Breakfast" color="#D4A574" items={m.breakfast} />
+                                            <Section label="Lunch" color="#7BA37B" items={m.lunch} />
+                                            <Section label="Dinner" color="#8B7BB5" items={m.dinner} />
+                                            <Section label="Snacks" color="#C4796E" items={m.snacks.map(s => ({ name: s }))} />
                                         </div>
                                     );
                                 })()}
 
-                                <div className="watercolor-card rounded-2xl p-4">
-                                    <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">💧 Daily Water Intake</h3>
-                                    <p className="text-xs text-gray-400 mb-3">Aim for 8-10 glasses per day</p>
+                                <div className="card" style={{ padding: 20 }}>
+                                    <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#8A8580', marginBottom: 12 }}>Water Intake</p>
                                     <WaterTracker />
                                 </div>
                             </div>
                         )}
 
-                        {/* Tab: Workout */}
-                        {activeTab === 'workout' && (
-                            <div className="animate-fade-in space-y-5">
-                                <div className="text-center mb-2">
-                                    <h2 className="text-2xl font-display font-bold">{workoutPlan.name}</h2>
-                                    <p className="text-sm text-gray-400 mt-1">{workoutPlan.note}</p>
+                        {/* WORKOUT TAB */}
+                        {tab === 'workout' && (
+                            <div className="animate-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div style={{ textAlign: 'center', paddingTop: 8 }}>
+                                    <h2 className="font-serif" style={{ fontSize: 32, fontWeight: 300 }}>Movement</h2>
+                                    <p style={{ fontSize: 13, color: '#8A8580', marginTop: 4 }}>{wp.name} · {wp.note}</p>
                                 </div>
 
-                                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-                                    <span className="text-xl">⚠️</span>
-                                    <div>
-                                        <p className="text-sm font-medium text-amber-800">Safety Reminder</p>
-                                        <p className="text-xs text-amber-600 mt-1">Always consult your healthcare provider before exercising. Stop if you feel dizzy, short of breath, or experience any pain.</p>
-                                    </div>
+                                <div className="card-warm" style={{ padding: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                                    <span style={{ fontSize: 16, marginTop: 2 }}>⚠</span>
+                                    <p style={{ fontSize: 12, color: '#6B6560', lineHeight: 1.6 }}>Always consult your healthcare provider before exercising. Stop if you feel dizzy or experience pain.</p>
                                 </div>
 
-                                <div className="flex gap-2 overflow-x-auto pb-2">
-                                    {workoutPlan.days.map((d, i) => (
-                                        <button key={i} onClick={() => setSelectedDay(i)}
-                                            className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-medium transition-all ${
-                                                selectedDay === i
-                                                    ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white shadow-md'
-                                                    : 'bg-white/60 text-gray-500 hover:bg-purple-50'
-                                            }`}>
+                                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                                    {wp.days.map((d, i) => (
+                                        <button key={i} onClick={() => setSelDay(i)}
+                                            className={`pill ${selDay === i ? 'pill-active' : ''}`} style={{ flexShrink: 0 }}>
                                             {d.day}
                                         </button>
                                     ))}
                                 </div>
 
                                 {(() => {
-                                    const dayPlan = workoutPlan.days[selectedDay];
-                                    const dayExercises = dayPlan.exercises;
-                                    const completedCount = dayExercises.filter((_, i) => completedWorkouts[`${currentWeek}-${selectedDay}-${i}`]).length;
-                                    const allCompleted = completedCount === dayExercises.length;
+                                    const d = wp.days[selDay];
+                                    const exs = d.exercises;
+                                    const done = exs.filter((_, i) => doneEx[`${week}-${selDay}-${i}`]).length;
 
                                     return (
-                                        <div className="watercolor-card rounded-2xl p-5">
-                                            <div className="flex items-center justify-between mb-4">
+                                        <div className="card" style={{ padding: 24 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                                                 <div>
-                                                    <h3 className="font-display font-semibold text-lg">{dayPlan.title}</h3>
-                                                    <p className="text-xs text-gray-400">⏱ {dayPlan.duration}</p>
+                                                    <h3 className="font-serif" style={{ fontSize: 24, fontWeight: 400 }}>{d.title}</h3>
+                                                    <p style={{ fontSize: 12, color: '#8A8580', marginTop: 4 }}>{d.dur}</p>
                                                 </div>
-                                                {allCompleted && <span className="text-2xl animate-float">🎉</span>}
+                                                {done === exs.length && <span style={{ fontSize: 20 }}>✓</span>}
                                             </div>
 
-                                            {/* YouTube Video Link */}
-                                            {dayPlan.youtube && (
-                                                <a href={dayPlan.youtube.url} target="_blank" rel="noopener noreferrer"
-                                                    className="yt-btn mb-4 inline-flex">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                                                    {dayPlan.youtube.title}
+                                            {/* YouTube link */}
+                                            {d.yt && (
+                                                <a href={d.yt.url} target="_blank" rel="noopener noreferrer" className="yt-link" style={{ marginBottom: 20, display: 'inline-flex' }}>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                                    Follow along: {d.yt.title}
                                                 </a>
                                             )}
 
-                                            <div className="h-2 rounded-full bg-gray-100 mb-4 overflow-hidden">
-                                                <div className="h-full rounded-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-500"
-                                                    style={{ width: `${(completedCount / dayExercises.length) * 100}%` }}></div>
+                                            <div className="progress-track" style={{ marginBottom: 6 }}>
+                                                <div className="progress-fill" style={{ width: `${(done / exs.length) * 100}%` }}></div>
                                             </div>
-                                            <p className="text-xs text-gray-400 mb-4">{completedCount}/{dayExercises.length} completed</p>
+                                            <p style={{ fontSize: 11, color: '#8A8580', marginBottom: 20 }}>{done} of {exs.length} completed</p>
 
-                                            <div className="space-y-3">
-                                                {dayExercises.map((ex, i) => {
-                                                    const isComplete = completedWorkouts[`${currentWeek}-${selectedDay}-${i}`];
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                {exs.map((ex, i) => {
+                                                    const isDone = doneEx[`${week}-${selDay}-${i}`];
                                                     return (
-                                                        <div key={i} className={`workout-card flex items-center gap-3 p-3 rounded-xl transition-all ${
-                                                            isComplete ? 'bg-green-50/60' : 'bg-white/40'
-                                                        }`}>
-                                                            <input type="checkbox" checked={isComplete || false}
-                                                                onChange={() => toggleWorkout(selectedDay, i)}
-                                                                className="checkbox-custom" />
-                                                            <div className="flex-1">
-                                                                <p className={`text-sm font-medium ${isComplete ? 'line-through text-gray-400' : ''}`}>{ex.name}</p>
-                                                                <div className="flex items-center gap-2 mt-0.5">
-                                                                    {ex.duration && <span className="text-xs text-purple-400">⏱ {ex.duration}</span>}
-                                                                    {ex.reps && <span className="text-xs text-pink-400">🔄 {ex.reps}</span>}
+                                                        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 12, borderRadius: 12,
+                                                            background: isDone ? '#F0EDE8' : 'transparent', transition: 'background 0.2s' }}>
+                                                            <input type="checkbox" checked={isDone || false} onChange={() => toggleEx(selDay, i)} className="check-custom" />
+                                                            <div style={{ flex: 1 }}>
+                                                                <p style={{ fontSize: 14, fontWeight: isDone ? 400 : 500, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#8A8580' : '#2C2C2C' }}>{ex.name}</p>
+                                                                <div style={{ display: 'flex', gap: 12, marginTop: 3 }}>
+                                                                    {ex.dur && <span style={{ fontSize: 12, color: '#8A8580' }}>{ex.dur}</span>}
+                                                                    {ex.reps && <span style={{ fontSize: 12, color: '#8A8580' }}>{ex.reps}</span>}
                                                                 </div>
-                                                                {ex.note && <p className="text-xs text-gray-400 mt-0.5">{ex.note}</p>}
+                                                                {ex.note && <p style={{ fontSize: 12, color: '#A09890', marginTop: 2 }}>{ex.note}</p>}
                                                             </div>
                                                         </div>
                                                     );
@@ -950,178 +1114,124 @@
                             </div>
                         )}
 
-                        {/* Tab: Doctor */}
-                        {activeTab === 'doctor' && (
-                            <div className="animate-fade-in space-y-5">
-                                <div className="text-center mb-2">
-                                    <h2 className="text-2xl font-display font-bold">Doctor Checkpoints</h2>
-                                    <p className="text-sm text-gray-400 mt-1">Your prenatal care timeline</p>
+                        {/* DOCTOR TAB */}
+                        {tab === 'doctor' && (
+                            <div className="animate-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div style={{ textAlign: 'center', paddingTop: 8 }}>
+                                    <h2 className="font-serif" style={{ fontSize: 32, fontWeight: 300 }}>Appointments</h2>
+                                    <p style={{ fontSize: 13, color: '#8A8580', marginTop: 4 }}>Your prenatal care timeline</p>
                                 </div>
 
-                                <div className="relative">
-                                    <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-pink-300 via-purple-300 to-pink-300"></div>
-                                    <div className="space-y-4">
-                                        {DOCTOR_CHECKPOINTS.map((checkpoint, idx) => {
-                                            const isPast = checkpoint.week < currentWeek;
-                                            const isCurrent = checkpoint.week === currentWeek;
-                                            const isNext = !isPast && !isCurrent && DOCTOR_CHECKPOINTS.filter(c => c.week >= currentWeek)[0]?.week === checkpoint.week;
-                                            const apptData = appointmentDetails[checkpoint.week] || {};
-                                            const isEditing = editingAppt === checkpoint.week;
+                                {CHECKPOINTS.map((cp, idx) => {
+                                    const past = cp.week < week;
+                                    const curr = cp.week === week;
+                                    const ad = appts[cp.week] || {};
+                                    const editing = editAppt === cp.week;
+                                    return (
+                                        <div key={idx} className="card" style={{ padding: 20, opacity: past ? 0.5 : 1, border: curr ? '1px solid #2C2C2C' : undefined }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flex: 1 }}>
+                                                    <span style={{ fontSize: 22 }}>{cp.icon}</span>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                                            <h3 style={{ fontSize: 15, fontWeight: 500 }}>{cp.title}</h3>
+                                                            {curr && <span className="tag" style={{ background: '#2C2C2C', color: '#F5F0EB', fontSize: 9 }}>This Week</span>}
+                                                        </div>
+                                                        <p style={{ fontSize: 12, color: '#8A8580', marginTop: 3 }}>Week {cp.week} · {cp.desc}</p>
 
-                                            return (
-                                                <div key={idx} className="relative pl-14">
-                                                    <div className={`absolute left-4 w-5 h-5 rounded-full border-2 transition-all ${
-                                                        isPast ? 'bg-green-400 border-green-400' :
-                                                        isCurrent ? 'bg-pink-400 border-pink-400 animate-pulse-soft scale-125' :
-                                                        'bg-white border-gray-300'
-                                                    }`}>
-                                                        {isPast && <span className="absolute inset-0 flex items-center justify-center text-white text-[10px]">✓</span>}
-                                                    </div>
+                                                        {!editing && (ad.date || ad.location) && (
+                                                            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                                                {ad.date && <span className="tag" style={{ background: '#EDEAE5', color: '#5A5550' }}>📅 {new Date(ad.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}</span>}
+                                                                {ad.location && <span className="tag" style={{ background: '#EDEAE5', color: '#5A5550' }}>📍 {ad.location}</span>}
+                                                            </div>
+                                                        )}
 
-                                                    <div className={`watercolor-card rounded-2xl p-4 transition-all ${
-                                                        isCurrent ? 'ring-2 ring-pink-300 shadow-lg' :
-                                                        isNext ? 'ring-1 ring-purple-200' : ''
-                                                    } ${isPast ? 'opacity-60' : ''}`}>
-                                                        <div className="flex items-start justify-between">
-                                                            <div className="flex items-start gap-3 flex-1">
-                                                                <span className="text-2xl">{checkpoint.icon}</span>
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                                        <h3 className="font-semibold text-sm">{checkpoint.title}</h3>
-                                                                        {isCurrent && <span className="px-2 py-0.5 rounded-full bg-pink-100 text-pink-600 text-[10px] font-medium">THIS WEEK</span>}
-                                                                        {isNext && <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-600 text-[10px] font-medium">NEXT UP</span>}
-                                                                    </div>
-                                                                    <p className="text-xs text-gray-400 mt-0.5">Week {checkpoint.week}</p>
-                                                                    <p className="text-xs text-gray-500 mt-1">{checkpoint.desc}</p>
-
-                                                                    {/* Appointment date & location display */}
-                                                                    {!isEditing && (apptData.date || apptData.location) && (
-                                                                        <div className="mt-2 flex flex-wrap gap-2">
-                                                                            {apptData.date && (
-                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 text-[10px]">
-                                                                                    📅 {new Date(apptData.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                                                                                </span>
-                                                                            )}
-                                                                            {apptData.location && (
-                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 text-[10px]">
-                                                                                    📍 {apptData.location}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-
-                                                                    {/* Edit form */}
-                                                                    {isEditing && (
-                                                                        <div className="mt-2 space-y-2 animate-fade-in">
-                                                                            <div>
-                                                                                <label className="text-[10px] text-gray-400 block mb-0.5">Appointment Date</label>
-                                                                                <input type="date" value={apptData.date || ''}
-                                                                                    onChange={e => updateAppointment(checkpoint.week, 'date', e.target.value)}
-                                                                                    className="w-full px-2 py-1.5 rounded-lg border border-pink-200 bg-white/80 text-xs focus:outline-none focus:ring-1 focus:ring-pink-300" />
-                                                                            </div>
-                                                                            <div>
-                                                                                <label className="text-[10px] text-gray-400 block mb-0.5">Clinic / Location</label>
-                                                                                <input type="text" value={apptData.location || ''} placeholder="e.g. Dr. Smith's Office"
-                                                                                    onChange={e => updateAppointment(checkpoint.week, 'location', e.target.value)}
-                                                                                    className="w-full px-2 py-1.5 rounded-lg border border-pink-200 bg-white/80 text-xs focus:outline-none focus:ring-1 focus:ring-pink-300" />
-                                                                            </div>
-                                                                            <button onClick={() => setEditingAppt(null)}
-                                                                                className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-pink-400 to-purple-400 text-white">
-                                                                                Done
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
+                                                        {editing && (
+                                                            <div className="animate-in" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                                <div>
+                                                                    <label style={{ fontSize: 10, color: '#8A8580', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4, display: 'block' }}>Date</label>
+                                                                    <input type="date" value={ad.date||''} onChange={e => updateAppt(cp.week,'date',e.target.value)} style={{ padding: '8px 12px', fontSize: 13 }} />
                                                                 </div>
+                                                                <div>
+                                                                    <label style={{ fontSize: 10, color: '#8A8580', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4, display: 'block' }}>Location</label>
+                                                                    <input type="text" value={ad.location||''} placeholder="e.g. Dr. Smith's Office" onChange={e => updateAppt(cp.week,'location',e.target.value)} style={{ padding: '8px 12px', fontSize: 13 }} />
+                                                                </div>
+                                                                <button onClick={() => setEditAppt(null)} className="btn-primary" style={{ padding: '8px 20px', fontSize: 12, alignSelf: 'flex-start' }}>Done</button>
                                                             </div>
-                                                            <button onClick={() => setEditingAppt(isEditing ? null : checkpoint.week)}
-                                                                className="text-gray-300 hover:text-pink-400 transition-colors ml-2 flex-shrink-0"
-                                                                title="Edit appointment details">
-                                                                {isEditing ? '✕' : '✏️'}
-                                                            </button>
-                                                        </div>
-
-                                                        <div className="mt-3 pt-3 border-t border-pink-50">
-                                                            <p className="text-[10px] font-semibold text-gray-400 uppercase mb-2">Tests & Procedures</p>
-                                                            <div className="space-y-1.5">
-                                                                {checkpoint.tests.map((test, tIdx) => (
-                                                                    <label key={tIdx} className="flex items-center gap-2 cursor-pointer group">
-                                                                        <input type="checkbox"
-                                                                            checked={checkedTests[`${checkpoint.week}-${tIdx}`] || false}
-                                                                            onChange={() => toggleTest(checkpoint.week, tIdx)}
-                                                                            className="checkbox-custom" style={{ width: 16, height: 16 }} />
-                                                                        <span className={`text-xs group-hover:text-pink-500 transition-colors ${
-                                                                            checkedTests[`${checkpoint.week}-${tIdx}`] ? 'line-through text-gray-300' : 'text-gray-600'
-                                                                        }`}>{test}</span>
-                                                                    </label>
-                                                                ))}
-                                                            </div>
-                                                        </div>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
+                                                <button onClick={() => setEditAppt(editing ? null : cp.week)}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#A09890', padding: 4 }}>
+                                                    {editing ? '✕' : '✎'}
+                                                </button>
+                                            </div>
+
+                                            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #EDEAE5' }}>
+                                                <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A09890', marginBottom: 10, fontWeight: 500 }}>Tests & Procedures</p>
+                                                {cp.tests.map((t, ti) => (
+                                                    <label key={ti} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, cursor: 'pointer' }}>
+                                                        <input type="checkbox" checked={checks[`${cp.week}-${ti}`]||false} onChange={() => toggleCheck(cp.week,ti)} className="check-custom" style={{ width: 18, height: 18 }} />
+                                                        <span style={{ fontSize: 13, color: checks[`${cp.week}-${ti}`] ? '#A09890' : '#5A5550', textDecoration: checks[`${cp.week}-${ti}`] ? 'line-through' : 'none' }}>{t}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
 
-                        {/* Tab: Journal */}
-                        {activeTab === 'journal' && (
-                            <div className="animate-fade-in space-y-5">
-                                <div className="text-center mb-2">
-                                    <h2 className="text-2xl font-display font-bold">Pregnancy Journal</h2>
-                                    <p className="text-sm text-gray-400 mt-1">Capture your memories and feelings</p>
+                        {/* JOURNAL TAB */}
+                        {tab === 'journal' && (
+                            <div className="animate-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div style={{ textAlign: 'center', paddingTop: 8 }}>
+                                    <h2 className="font-serif" style={{ fontSize: 32, fontWeight: 300 }}>Journal</h2>
+                                    <p style={{ fontSize: 13, color: '#8A8580', marginTop: 4 }}>Capture your memories</p>
                                 </div>
 
-                                <div className="watercolor-card rounded-2xl p-5">
-                                    <h3 className="font-display font-semibold mb-3">Week {currentWeek} Entry</h3>
-                                    <textarea
-                                        value={currentJournal}
-                                        onChange={e => setCurrentJournal(e.target.value)}
-                                        placeholder="How are you feeling today? Any special moments to remember?"
-                                        className="w-full h-32 p-3 rounded-xl bg-white/60 border border-pink-100 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-pink-200 font-hand text-lg"
-                                    />
-                                    <button onClick={saveJournal}
-                                        className="mt-3 px-6 py-2 rounded-full bg-gradient-to-r from-pink-400 to-purple-400 text-white text-sm font-medium hover:shadow-lg transition-all">
-                                        Save Entry
-                                    </button>
+                                <div className="card" style={{ padding: 24 }}>
+                                    <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#8A8580', marginBottom: 12 }}>Week {week}</h3>
+                                    <textarea value={jText} onChange={e => setJText(e.target.value)}
+                                        placeholder="How are you feeling today?" style={{ height: 120, marginBottom: 16 }} />
+                                    <button onClick={saveJ} className="btn-primary">Save Entry</button>
                                 </div>
 
-                                {Object.entries(journalEntries).sort((a, b) => b[0] - a[0]).map(([week, entries]) => (
-                                    <div key={week} className="watercolor-card rounded-2xl p-4">
-                                        <h3 className="font-display font-semibold text-sm mb-3 flex items-center gap-2">
-                                            <span className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-300 to-purple-300 flex items-center justify-center text-white text-[10px]">{week}</span>
-                                            Week {week}
-                                        </h3>
-                                        {entries.map((entry, i) => (
-                                            <div key={i} className={`${i > 0 ? 'mt-3 pt-3 border-t border-pink-50' : ''}`}>
-                                                <p className="text-sm text-gray-600 font-hand text-lg leading-relaxed">{entry.text}</p>
-                                                <p className="text-[10px] text-gray-300 mt-1">{entry.date}</p>
+                                {Object.entries(journal).sort((a, b) => b[0] - a[0]).map(([w, entries]) => (
+                                    <div key={w} className="card" style={{ padding: 24 }}>
+                                        <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#8A8580', marginBottom: 12 }}>Week {w}</h3>
+                                        {entries.map((e, i) => (
+                                            <div key={i} style={{ paddingTop: i > 0 ? 14 : 0, marginTop: i > 0 ? 14 : 0, borderTop: i > 0 ? '1px solid #EDEAE5' : 'none' }}>
+                                                <p style={{ fontSize: 14, lineHeight: 1.7, color: '#5A5550' }}>{e.text}</p>
+                                                <p style={{ fontSize: 11, color: '#A09890', marginTop: 6 }}>{e.date}</p>
                                             </div>
                                         ))}
                                     </div>
                                 ))}
 
-                                {Object.keys(journalEntries).length === 0 && (
-                                    <div className="text-center py-8 text-gray-300">
-                                        <span className="text-4xl block mb-3">📝</span>
-                                        <p className="text-sm">Your journal is empty. Start writing!</p>
+                                {Object.keys(journal).length === 0 && (
+                                    <div style={{ textAlign: 'center', padding: '40px 0', color: '#A09890' }}>
+                                        <p style={{ fontSize: 14 }}>Your journal is empty. Start writing.</p>
                                     </div>
                                 )}
                             </div>
                         )}
                     </main>
 
-                    {/* Bottom Navigation */}
-                    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-pink-100/50 z-50">
-                        <div className="max-w-2xl mx-auto flex justify-around py-2 px-2">
-                            {tabs.map(tab => (
-                                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                                    className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all ${
-                                        activeTab === tab.id ? 'tab-active' : 'text-gray-400 hover:text-gray-600'
-                                    }`}>
-                                    <span className="text-lg">{tab.icon}</span>
-                                    <span className="text-[10px] font-medium">{tab.label}</span>
+                    {/* Tab Bar */}
+                    <nav className="tab-bar" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50 }}>
+                        <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', justifyContent: 'space-around', padding: '8px 0 env(safe-area-inset-bottom, 8px)' }}>
+                            {[
+                                { id: 'home', label: 'Home', icon: '✿' },
+                                { id: 'nutrition', label: 'Nutrition', icon: '◉' },
+                                { id: 'workout', label: 'Movement', icon: '◎' },
+                                { id: 'doctor', label: 'Appts', icon: '◈' },
+                                { id: 'journal', label: 'Journal', icon: '◇' }
+                            ].map(t => (
+                                <button key={t.id} onClick={() => setTab(t.id)}
+                                    className={`tab-item ${tab === t.id ? 'tab-item-active' : ''}`}>
+                                    <span style={{ fontSize: 18 }}>{t.icon}</span>
+                                    <span>{t.label}</span>
                                 </button>
                             ))}
                         </div>
